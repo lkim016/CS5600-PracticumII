@@ -14,12 +14,13 @@
 #include "config.h"
 
 
-void rcv_socket(int client_sock) {
+void rcv_socket(int socket, int client_sock) {
   char client_message[8196];
   memset(client_message, '\0', sizeof(client_message));
   
   if (strcmp(client_message, "STOP") == 0) {
       printf("Exiting Server...\n");
+      close(socket);
       close(client_sock);
       exit(0);
     } //else if (strcmp(client_message, "WRITE") == 0) {
@@ -104,7 +105,7 @@ int main(void) {
 
     
     // separate the message by space
-    rcv_socket(client_sock);
+    rcv_socket(socket_desc, client_sock);
   
     // Respond to client:
     strcpy(server_message, "This is the server's response message.");
