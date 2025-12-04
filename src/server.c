@@ -15,7 +15,10 @@
 
 
 void rcv_socket(int socket, int client_sock) {
+  char server_message[8196];
   char client_message[8196];
+  // Clean buffers:
+  memset(server_message, '\0', sizeof(server_message));
   memset(client_message, '\0', sizeof(client_message));
   
   // Receive client's message:
@@ -63,10 +66,6 @@ int main(void) {
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
-  char server_message[8196];
-  
-  // Clean buffers:
-  memset(server_message, '\0', sizeof(server_message));
   
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
