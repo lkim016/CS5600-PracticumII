@@ -18,14 +18,6 @@ void rcv_socket(int socket, int client_sock) {
   char client_message[8196];
   memset(client_message, '\0', sizeof(client_message));
   
-  if (strcmp(client_message, "STOP") == 0) {
-      printf("Exiting Server...\n");
-      close(socket);
-      close(client_sock);
-      exit(0);
-    } //else if (strcmp(client_message, "WRITE") == 0) {
-
-    //}
   // Receive client's message:
   if (recv(client_sock, client_message, 
           sizeof(client_message), 0) < 0){
@@ -34,6 +26,15 @@ void rcv_socket(int socket, int client_sock) {
     return;
   }
   printf("Msg from client: %s\n", client_message);
+
+  if (strcmp(client_message, "STOP") == 0) {
+      printf("Exiting Server...\n");
+      close(socket);
+      close(client_sock);
+      exit(0);
+  } //else if (strcmp(client_message, "WRITE") == 0) {
+
+    //}
 
   // Returns first token
   char* token = strtok(client_message, DELIMITER);
@@ -120,6 +121,8 @@ int main(void) {
     // Closing the socket:
     close(client_sock);
   }
+  
+  close(socket_desc);
     
   return 0;
 }
