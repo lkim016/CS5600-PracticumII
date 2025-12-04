@@ -62,8 +62,11 @@ void send_socket(int socket, int arg_count, char* args[]) {
           strcat(client_message, DELIMITER);
       }
     }
-
-    send(socket, client_message, strlen(client_message), 0);
+    if(send(socket, client_message, strlen(client_message), 0) < 0){
+      printf("Unable to send message\n");
+      close(socket);
+      return;
+    }
 
     /*
     // Allocate memory to hold the file data

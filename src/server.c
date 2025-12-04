@@ -14,12 +14,12 @@
 #include "config.h"
 
 
-void rcv_socket(int socket_desc) {
+void rcv_socket(int client_sock) {
   char client_message[8196];
+  memset(client_message, '\0', sizeof(client_message));
   
   if (strcmp(client_message, "STOP") == 0) {
       printf("Exiting Server...\n");
-      close(socket_desc);
       close(client_sock);
       exit(0);
     } //else if (strcmp(client_message, "WRITE") == 0) {
@@ -29,7 +29,6 @@ void rcv_socket(int socket_desc) {
   if (recv(client_sock, client_message, 
           sizeof(client_message), 0) < 0){
     printf("Couldn't receive\n");
-    close(socket_desc);
     close(client_sock);
     return;
   }
@@ -52,7 +51,7 @@ int main(void) {
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
-  char server_message[8196]
+  char server_message[8196];
   
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
@@ -86,7 +85,6 @@ int main(void) {
   }
   
   while(1) { // loop through to have server continue listening until shut down
-    memset(client_message, '\0', sizeof(client_message));
     
     printf("\nListening for incoming connections on port %d\n", PORT);
 
