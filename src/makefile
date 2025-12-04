@@ -1,7 +1,12 @@
+CC = gcc
+CFLAGS = -Wall
+
 all: server client
 
 server: server.c
-	gcc server.c -o server
+	$(CC) $(CFLAGS) $^ -o server
+	chmod +x ./server
 
 client: client.c
-	gcc client.c -o client
+	$(CC) $(CFLAGS) $^ -o rfs
+	chmod +x ./rfs

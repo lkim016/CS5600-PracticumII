@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     // Set port and IP the same as server-side:
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDR);
+    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
     
     // Send connection request to server:
     if(connect(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
