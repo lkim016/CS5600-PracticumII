@@ -6,21 +6,56 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "config.h"
 
-int main(void)
-{
+
+void rcv_socket(int socket_desc) {
+  char client_message[8196];
+  
+  if (strcmp(client_message, "STOP") == 0) {
+      printf("Exiting Server...\n");
+      close(socket_desc);
+      close(client_sock);
+      exit(0);
+    } //else if (strcmp(client_message, "WRITE") == 0) {
+
+    //}
+  // Receive client's message:
+  if (recv(client_sock, client_message, 
+          sizeof(client_message), 0) < 0){
+    printf("Couldn't receive\n");
+    close(socket_desc);
+    close(client_sock);
+    return;
+  }
+  printf("Msg from client: %s\n", client_message);
+
+  // Returns first token
+  char* token = strtok(client_message, DELIMITER);
+  int i = 0;
+  while (token != NULL) {
+    printf("%s\n", token);
+    token = strtok(NULL, DELIMITER);
+    if(i == 1) {
+      break;
+    }
+      i++;
+  }
+}
+
+int main(void) {
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
-  char server_message[8196], client_message[8196];
+  char server_message[8196]
   
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
-  memset(client_message, '\0', sizeof(client_message));
   
   // Create socket:
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -33,7 +68,7 @@ int main(void)
   
   // Set port and IP:
   server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(2000);
+  server_addr.sin_port = htons(PORT);
   server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
   
   // Bind to the set port and IP:
@@ -49,45 +84,43 @@ int main(void)
     close(socket_desc);
     return -1;
   }
-  printf("\nListening for incoming connections.....\n");
   
-  // Accept an incoming connection:
-  client_size = sizeof(client_addr);
-  client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
+  while(1) { // loop through to have server continue listening until shut down
+    memset(client_message, '\0', sizeof(client_message));
+    
+    printf("\nListening for incoming connections on port %d\n", PORT);
+
+    // Accept an incoming connection:
+    client_size = sizeof(client_addr);
+    client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
+    
+    if (client_sock < 0){
+      printf("Can't accept\n");
+      close(socket_desc);
+      close(client_sock);
+      return -1;
+    }
+    printf("Client connected at IP: %s and port: %i\n", 
+          inet_ntoa(client_addr.sin_addr), 
+          ntohs(client_addr.sin_port));
+
+    
+    // separate the message by space
+    rcv_socket(client_sock);
   
-  if (client_sock < 0){
-    printf("Can't accept\n");
-    close(socket_desc);
+    // Respond to client:
+    strcpy(server_message, "This is the server's response message.");
+    
+    if (send(client_sock, server_message, strlen(server_message), 0) < 0){
+      printf("Can't send\n");
+      close(socket_desc);
+      close(client_sock);
+      return -1;
+    }
+    
+    // Closing the socket:
     close(client_sock);
-    return -1;
   }
-  printf("Client connected at IP: %s and port: %i\n", 
-         inet_ntoa(client_addr.sin_addr), 
-         ntohs(client_addr.sin_port));
-  
-  // Receive client's message:
-  if (recv(client_sock, client_message, 
-           sizeof(client_message), 0) < 0){
-    printf("Couldn't receive\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
-  }
-  printf("Msg from client: %s\n", client_message);
-  
-  // Respond to client:
-  strcpy(server_message, "This is the server's response message.");
-  
-  if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-    printf("Can't send\n");
-    close(socket_desc);
-    close(client_sock);
-    return -1;
-  }
-  
-  // Closing the socket:
-  close(client_sock);
-  close(socket_desc);
-  
+    
   return 0;
 }
