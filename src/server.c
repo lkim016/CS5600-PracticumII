@@ -27,6 +27,16 @@ void rcv_socket(int socket, int client_sock) {
   }
   printf("Msg from client: %s\n", client_message);
 
+  // Respond to client:
+  strcpy(server_message, "This is the server's response message.");
+  
+  if (send(client_sock, server_message, strlen(server_message), 0) < 0){
+    printf("Can't send\n");
+    close(socket);
+    close(client_sock);
+    exit(1);
+  }
+
   if (strcmp(client_message, "STOP") == 0) {
       printf("Exiting Server...\n");
       close(socket);
@@ -104,24 +114,13 @@ int main(void) {
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
 
-    
     // separate the message by space
     rcv_socket(socket_desc, client_sock);
-  
-    // Respond to client:
-    strcpy(server_message, "This is the server's response message.");
-    
-    if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-      printf("Can't send\n");
-      close(socket_desc);
-      close(client_sock);
-      return -1;
-    }
     
     // Closing the socket:
     close(client_sock);
   }
-  
+
   close(socket_desc);
     
   return 0;
