@@ -18,7 +18,7 @@ void send_socket(int socket, int arg_count, char* args[]) {
   // const char *command, const char *file_path
   if (args[1] == NULL) {
       printf("Invalid command\n");
-      return;
+      exit(1);
   }
   const char *command = args[1];
   // send command WRITE, GET, RM along with the file
@@ -27,20 +27,8 @@ void send_socket(int socket, int arg_count, char* args[]) {
     
     if (args[2] == NULL) {
       printf("Invalid file path\n");
-      return;
+      exit(1);
     }
-
-    const char *file_path = args[2];
-    FILE *file = fopen(file_path, "rb"); // "rb" for read binary
-    if (file == NULL) {
-        perror("Error opening file");
-        return;
-    }
-
-    // Get the size of the file
-    fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
     
     // Calculate message length when combined by delimiters - command,filename,file_size,remote_filename
     for(int i = 1; i < arg_count; i++) {
@@ -62,36 +50,71 @@ void send_socket(int socket, int arg_count, char* args[]) {
           strcat(client_message, DELIMITER);
       }
     }
-    
+
     if(send(socket, client_message, strlen(client_message), 0) < 0){
       printf("Unable to send message\n");
       close(socket);
       return;
+    }
+    //------
+    // int fp_size = strlen(LOCAL_FILE_PATH) + strlen(args[2]) + 1;
+    const char *file_path = strcat(LOCAL_FILE_PATH, args[2]); // ex: data/file.txt
+    printf("File path: %s\n", file_path);
+    FILE *file = fopen(file_path, "rb"); // "rb" for read binary
+    if (file == NULL) {
+        perror("Error opening file");
+        exit(1);
     }
 
-    /*
-    // Allocate memory to hold the file data
-    uint8_t *file_data = (uint8_t *)malloc(file_size);
-    if (file_data == NULL) {
-        perror("Memory allocation failed");
+    // Get the size of the file
+    if (fseek(file, 0, SEEK_END) != 0) {
+        perror("Error seeking to end of file");
         fclose(file);
-        return;
+        exit(1);
     }
-    // Read the file data into the buffer
-    fread(file_data, 1, file_size, file);
-    // Send the message using send_message function
-    if(send(socket, client_message, strlen(client_message), 0) < 0){
-      printf("Unable to send message\n");
-      close(socket);
-      return;
+    long file_size = ftell(file);
+    if(file_size < 0) {
+        perror("Error getting file size");
+        fclose(file);
+        exit(1);
+
     }
-    */
-    // free(file_data);
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        perror("Error seeking to start of file");
+        fclose(file);
+        exit(1);
+    }
+    
+
+    // send the file size
+    uint32_t size = htonl(file_size);
+    send(socket, &size, sizeof(size), 0);
+
+    // send the file data
+    char buffer[CHUNK_SIZE]; // buffer to hold file chunks
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
+      size_t total_sent = 0;
+
+      while (total_sent < bytes_read) {
+          ssize_t sent = send(socket, buffer + total_sent,
+                              bytes_read - total_sent, 0);
+
+          if (sent < 0) {
+              perror("Unable to send message\n");
+              // handle error (disconnect, etc.)
+              exit(1);
+          }
+
+          total_sent += sent;
+        }
+    }
+    
     fclose(file);
     return;
   }
     /*
-    else if(strcmp(command, "WRITE") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
+    else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
       break;
     case "RM":
       // For GET and RM, no file data is sent
@@ -135,6 +158,8 @@ void send_socket(int socket, int arg_count, char* args[]) {
   }
   */
 
+ close(socket);
+
 }
 
 /**
@@ -146,13 +171,13 @@ void send_socket(int socket, int arg_count, char* args[]) {
  */
 int main(int argc, char* argv[]) {
 
-  if (argc < 2) {
-      printf("Usage: %s <COMMAND> <FILENAME>\n", argv[0]);
+  if (argc < 3) {
+      printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
       return -1;
-  } else if (argc < 3 && (strcmp(argv[1], "WRITE") == 0 || strcmp(argv[1], "GET") == 0 || strcmp(argv[1], "RM") == 0)) {
-      printf("Usage: %s %s <FILENAME>\n", argv[0], argv[1]);
+  } else if (argc < 4 && (strcmp(argv[1], "WRITE") == 0 || strcmp(argv[1], "GET") == 0 || strcmp(argv[1], "RM") == 0)) {
+      printf("Usage: %s %s <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0], argv[1]);
       return -1;
-  } else if ((argc >= 3 && argc < 5) || strcmp(argv[1], "STOP") == 0) {
+  } else if (argc < 5 || strcmp(argv[1], "STOP") == 0) { // if local file is omitted then use current folder
     int socket_desc;
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
     char server_message[MSG_SIZE];
@@ -190,6 +215,7 @@ int main(int argc, char* argv[]) {
     gets(client_message);
     */
    
+    // FIXME: maybe do the command handling here
     // Send the message to server:
     send_socket(socket_desc, argc, argv);
     

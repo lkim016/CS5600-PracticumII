@@ -7,6 +7,9 @@
  */
 
 #include "socket.h"
+// write_cmd() {}
+
+// 
 
 ssize_t send_all(int sock, const void *buf, size_t len) {
     size_t sent = 0;

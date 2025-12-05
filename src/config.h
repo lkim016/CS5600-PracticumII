@@ -2,7 +2,7 @@
 #define MSG_SIZE 2000
 #endif
 
-#define MAX_FILENAME 255
+#define CHUNK_SIZE 4096
 
 // port number
 #define PORT 8080
@@ -12,4 +12,4 @@
 
 #define DELIMITER ","
 
-#define NEXT_ID_PATH "data/_NEXT_ID.txt"  // file that tells us the next un-used id number
+#define LOCAL_FILE_PATH "data/"  // file that tells us the next un-used id number

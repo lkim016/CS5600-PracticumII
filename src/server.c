@@ -15,13 +15,14 @@
 
 
 void rcv_socket(int socket, int client_sock) {
-  char server_message[8196];
-  char client_message[8196];
+  char server_message[CHUNK_SIZE];
+  char client_message[CHUNK_SIZE];
   // Clean buffers:
   memset(server_message, '\0', sizeof(server_message));
   memset(client_message, '\0', sizeof(client_message));
   
   // Receive client's message:
+  // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
   if (recv(client_sock, client_message, 
           sizeof(client_message), 0) < 0){
     printf("Couldn't receive\n");
@@ -30,8 +31,9 @@ void rcv_socket(int socket, int client_sock) {
   }
   printf("Msg from client: %s\n", client_message);
 
+  //-----------
   // Respond to client:
-  strcpy(server_message, "This is the server's response message.");
+  strcpy(server_message, "Server is processing sent message...");
   
   if (send(client_sock, server_message, strlen(server_message), 0) < 0){
     printf("Can't send\n");
@@ -39,27 +41,77 @@ void rcv_socket(int socket, int client_sock) {
     close(client_sock);
     exit(1);
   }
+  //----------
 
-  if (strcmp(client_message, "STOP") == 0) {
+  // Get client message and break it down by delimiter - get command size, local filenam size, server filename size
+  int cmd_len = 0;
+  int local_fname_len = 0; // maybe can put this size in an array or receive it at the time of the send?
+  int server_fname_len = 0;
+  int token_count = 0;
+  char* token = strtok(client_message, DELIMITER);
+  while (token != NULL) {
+    printf("%s\n", token);
+    if (cmd_len == 0) {
+        cmd_len = strlen(token);
+    } else if (local_fname_len == 0) {
+        local_fname_len = strlen(token);
+    } else if (server_fname_len == 0) {
+        server_fname_len = strlen(token);
+    }
+    token_count++;
+    token = strtok(NULL, DELIMITER);
+  }
+
+  // Store command
+  int src_str_index = 0;
+  char command[cmd_len + 1];
+  strncpy(command, client_message + src_str_index, cmd_len);
+  command[cmd_len] = '\0'; // null terminate the string
+  // store local filename
+  src_str_index = cmd_len + 1;
+  char local_filename[local_fname_len + 1];
+  strncpy(local_filename, client_message + src_str_index, local_fname_len);
+  local_filename[local_fname_len] = '\0';
+  // store server filename
+  src_str_index += local_fname_len + 1;
+  char server_filename[server_fname_len + 1];
+  strncpy(server_filename, client_message + src_str_index, server_fname_len);
+  server_filename[server_fname_len] = '\0';
+
+  if (strcmp(command, "STOP") == 0) {
       printf("Exiting Server...\n");
       close(socket);
       close(client_sock);
       exit(0);
-  } //else if (strcmp(client_message, "WRITE") == 0) {
-
-    //}
-
-  // Returns first token
-  char* token = strtok(client_message, DELIMITER);
-  int i = 0;
-  while (token != NULL) {
-    printf("%s\n", token);
-    token = strtok(NULL, DELIMITER);
-    if(i == 1) {
-      break;
-    }
-      i++;
+  } else if (strcmp(command, "WRITE") == 0) {
+    uint32_t size;
+    recv(client_sock, &size, sizeof(size), 0);
+    size = ntohl(size);
+    printf("File size: %u\n", size);
+    /* // sample from original
+    if (recv(client_sock, client_message, 
+           sizeof(client_message), 0) < 0){
+    printf("Couldn't receive\n");
+    close(socket_desc);
+    close(client_sock);
+    return -1;
   }
+  */
+
+  char buffer[CHUNK_SIZE];
+  ssize_t received;
+
+  FILE *out = fopen(server_filename, "wb");
+
+  for (int i = 0; i < (size/CHUNK_SIZE); i++) {
+    while ((received = recv(client_sock, buffer, CHUNK_SIZE, 0)) > 0) {
+        fwrite(buffer, 1, received, out);
+    }
+  }
+
+  fclose(out);
+  }
+
 }
 
 int main(void) {
