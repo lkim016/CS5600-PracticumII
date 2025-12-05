@@ -38,14 +38,9 @@ void client_cmd_handles(socket_t* sock) {
             printf("Failed to send message\n");
         }
       */
-      break;
+        break;
       case STOP:
-        const char* cmd_str = cmd_enum_to_str(sock->command);
-        if(send(sock->client_sock_fd, cmd_str, strlen(cmd_str), 0) < 0) {
-          printf("Unable to send message\n");
-          free_socket(sock);
-          return;
-        }
+        exit(0);
         break;
       default:
         printf("Unknown command\n");
@@ -140,7 +135,7 @@ int main(int argc, char* argv[]) {
     printf("Message size: %d\n", msg_size);
     printf("Client Message: %s\n", client_message);
     
-    // send client message
+    // send client message - this sends the commands
     if(send(client_sck->client_sock_fd, client_message, strlen(client_message), 0) < 0){
       printf("Unable to send message\n");
       free_socket(client_sck);

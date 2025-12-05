@@ -97,7 +97,27 @@ int main(void) {
     }
     printf("Msg from client: %s\n", client_message);
 
-  //-----------
+    int token_count = 0;
+    char* token = strtok(client_message, DELIMITER);
+    while (token != NULL) {
+      printf("%s\n", token);
+      if (token_count == 0) {
+        commands cmd = str_to_cmd_enum(token);
+        set_sock_command(server_sck, cmd);
+      } else if (token_count == 1) {
+        set_sock_read_fn(server_sck, token);
+      } else if (token_count == 2) {
+        set_sock_write_fn(server_sck, token);
+      }
+      token_count++;
+      token = strtok(NULL, DELIMITER);
+    }
+
+  printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filename, server_sck->write_filename);
+
+    server_cmd_handles(server_sck);
+
+    //-----------
   char server_message[CHUNK_SIZE];
     
   memset(server_message, '\0', sizeof(server_message));
@@ -110,26 +130,6 @@ int main(void) {
     exit(1);
   }
   //----------
-  int token_count = 0;
-  char* token = strtok(client_message, DELIMITER);
-  while (token != NULL) {
-    printf("%s\n", token);
-    if (token_count == 0) {
-      commands cmd = str_to_cmd_enum(token);
-      set_sock_command(server_sck, cmd);
-    } else if (token_count == 1) {
-      set_sock_read_fn(server_sck, token);
-    } else if (token_count == 2) {
-      set_sock_write_fn(server_sck, token);
-    }
-    token_count++;
-    token = strtok(NULL, DELIMITER);
-  }
-
-  printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filename, server_sck->write_filename);
-
-    // separate the message by space
-    server_cmd_handles(server_sck);
     
     // Closing the socket:
     close(server_sck->client_sock_fd);
