@@ -7,10 +7,72 @@
  */
 
 #include "socket.h"
-// socket_rcv_write() {}
+
+
+void send_file(int socket, const char* read_filename) {
+    int file_path_len = strlen(LOCAL_FILE_PATH) + strlen(read_filename) + 1;
+    char file_path[file_path_len]; // ex: data/file.txt
+    sprintf(file_path, "%s%s", LOCAL_FILE_PATH, read_filename);
+    printf("Local File path: %s\n", file_path);
+    FILE *file = fopen(file_path, "rb"); // "rb" for read binary
+    if (file == NULL) {
+        perror("Error opening file");
+        exit(1);
+    }
+
+    // Get the size of the file
+    if (fseek(file, 0, SEEK_END) != 0) {
+        perror("Error seeking to end of file");
+        fclose(file);
+        exit(1);
+    }
+    long file_size = ftell(file);
+    if(file_size < 0) {
+        perror("Error getting file size");
+        fclose(file);
+        exit(1);
+
+    }
+    if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
+        perror("Error seeking to start of file");
+        fclose(file);
+        exit(1);
+    }
+    
+    // send the file size
+    uint32_t size = htonl(file_size);
+    send(socket, &size, sizeof(size), 0);
+
+    // send the file data
+    char buffer[CHUNK_SIZE]; // buffer to hold file chunks
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
+      size_t total_sent = 0;
+
+      while (total_sent < bytes_read) {
+          ssize_t sent = send(socket, buffer + total_sent,
+                              bytes_read - total_sent, 0);
+
+          if (sent < 0) {
+              perror("Unable to send message\n");
+              // handle error (disconnect, etc.)
+              exit(1);
+          }
+
+          total_sent += sent;
+        }
+    }
+    
+    fclose(file);
+    close(socket);
+    return;
+}
+
+
 // socket_send_write() {}
 
 
+/*
 ssize_t send_all(int sock, const void *buf, size_t len) {
     size_t sent = 0;
     const char *p = buf;
@@ -107,3 +169,4 @@ int rcv_msg(int sockfd, char** command, char** filename, uint8_t** file_data, si
     
     return 0;
 }
+*/

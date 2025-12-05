@@ -1,12 +1,13 @@
 CC = gcc
 CFLAGS = -Wall
+SRC_FILES = src/socket.c
 
 all: server client
 
-server: src/server.c
+server: $(SRC_FILES) src/server.c
 	$(CC) $(CFLAGS) $^ -o server
 	chmod +x ./server
 
-client: src/client.c
+client: $(SRC_FILES) src/client.c
 	$(CC) $(CFLAGS) $^ -o rfs
 	chmod +x ./rfs
