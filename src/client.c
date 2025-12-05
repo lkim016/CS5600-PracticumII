@@ -15,38 +15,41 @@
 #include "socket.h"
 
 
-void client_cmd_handles(int socket, char* args[]) {
-    // const char *command, const char *file_path
-    const char *command = args[1];
+void client_cmd_handles(socket_t* sock) {
 
     // handle different commands
-    if(strcmp(command, "WRITE") == 0) {
-      if (args[2] == NULL) { // need to handle the file within the command since it can differ based on the command
-        printf("Invalid file path\n");
-        exit(1);
-      }
+    switch (sock->command) {
+      case WRITE:
+        if (sock->read_filename == NULL) { // need to handle the file within the command since it can differ based on the command
+          printf("Invalid file path\n");
+          free_socket(sock);
+          exit(1);
+        }
 
-      // send the file to server
-      const char *local_fn = args[2];
-      send_file(socket, local_fn);
-      /*
-    } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
+        // send the file to server
+        set_sock_read_fn(sock, sock->read_filename);
+        send_file(sock);
+        /*
+      } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
+        break;
+      } else if(strcmp(command,  "RM") == 0) {
+        // For GET and RM, no file data is sent
+        if (send_message(socket, client_message, strlen(client_message), NULL, 0) < 0) {
+            printf("Failed to send message\n");
+        }
+      */
       break;
-    } else if(strcmp(command,  "RM") == 0) {
-      // For GET and RM, no file data is sent
-      if (send_message(socket, client_message, strlen(client_message), NULL, 0) < 0) {
-          printf("Failed to send message\n");
-      }
-    */
-    } else if (strcmp(command, "STOP") == 0) {
-      if(send(socket, command, strlen(command), 0) < 0) {
-        printf("Unable to send message\n");
-        close(socket);
-        return;
-      }
-    } else {
-      printf("Unknown command\n");
-      return;
+      case STOP:
+        const char* cmd_str = cmd_enum_to_str(sock->command);
+        if(send(sock->client_sock_fd, cmd_str, strlen(cmd_str), 0) < 0) {
+          printf("Unable to send message\n");
+          free_socket(sock);
+          return;
+        }
+        break;
+      default:
+        printf("Unknown command\n");
+        break;
     }
 }
 
@@ -62,11 +65,12 @@ int main(int argc, char* argv[]) {
   if (argc < 2) {
       printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
       return -1;
-  } else if (argc < 3 && (strcmp(argv[1], "WRITE") == 0 || strcmp(argv[1], "GET") == 0 || strcmp(argv[1], "RM") == 0)) {
+  } else if (argc < 3 && (str_to_cmd_enum(argv[1]) == WRITE || str_to_cmd_enum(argv[1]) == GET || str_to_cmd_enum(argv[1]) == RM)) {
       printf("Usage: %s %s <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0], argv[1]);
       return -1;
-  } else if ((argc >= 3 && argc < 5) || strcmp(argv[1], "STOP") == 0) { // if local file is omitted then use current folder
-    int socket_desc;
+  } else if ((argc >= 3 && argc < 5) || str_to_cmd_enum(argv[1])== STOP) { // if local file is omitted then use current folder
+    // int socket_desc;
+    socket_t* client_sck = create_socket();
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
     char server_message[MSG_SIZE];
     
@@ -74,11 +78,11 @@ int main(int argc, char* argv[]) {
     memset(server_message,'\0',sizeof(server_message));
     
     // Create socket:
-    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+    client_sck->client_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     
-    if(socket_desc < 0){
+    if(client_sck->client_sock_fd < 0){
       printf("Unable to create socket\n");
-      close(socket_desc);
+      free_socket(client_sck);
       return -1;
     }
     
@@ -90,9 +94,9 @@ int main(int argc, char* argv[]) {
     server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
     
     // Send connection request to server:
-    if(connect(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
+    if(connect(client_sck->client_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
       printf("Unable to connect\n");
-      close(socket_desc);
+      free_socket(client_sck);
       return -1;
     }
     printf("Connected with server successfully\n");
@@ -109,8 +113,17 @@ int main(int argc, char* argv[]) {
         printf("Invalid message size\n");
         exit(1);
     }
-    // account for null file name
-    // Declare client message
+    
+    // set members of socket object
+    set_sock_command(client_sck, str_to_cmd_enum(argv[1]));
+    if (argc > 2) {
+        set_sock_read_fn(client_sck, argv[2]);
+    }
+    if (argc > 3) {
+        set_sock_write_fn(client_sck, argv[3]);
+    }
+    //----------- 
+    // Declare client message - since its a stream will send as comma-delimited string
     char client_message[msg_size];
     // Clean buffer:
     memset(client_message,'\0',sizeof(client_message));
@@ -128,26 +141,26 @@ int main(int argc, char* argv[]) {
     printf("Client Message: %s\n", client_message);
     
     // send client message
-    if(send(socket_desc, client_message, strlen(client_message), 0) < 0){
+    if(send(client_sck->client_sock_fd, client_message, strlen(client_message), 0) < 0){
       printf("Unable to send message\n");
-      close(socket_desc);
+      free_socket(client_sck);
       return -1;
     }
-    //--------------
+    //-----------
 
-    client_cmd_handles(socket_desc, argv);
+    client_cmd_handles(client_sck);
     
     // Receive the server's response:
-    if(recv(socket_desc, server_message, sizeof(server_message), 0) < 0){
+    if(recv(client_sck->client_sock_fd, server_message, sizeof(server_message), 0) < 0){
       printf("Error while receiving server's msg\n");
-      close(socket_desc);
+      close(client_sck->client_sock_fd);
       return -1;
     }
     
     printf("Server's response: %s\n",server_message);
     
     // Close the socket:
-    close(socket_desc);
+    free_socket(client_sck);
   }
   
   return 0;

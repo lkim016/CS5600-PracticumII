@@ -19,38 +19,54 @@ socket_t* create_socket() {
         fprintf(stderr, "ERROR: dynamic memory was not able to be allocated");
         exit(1);
     }
-    sock->command = NULL;
-    sock->send_filename = NULL;
-    sock->rcv_filename = NULL;
+    sock->command = NULL_VAL;
+    sock->read_filename = NULL;
+    sock->write_filename = NULL;
 
     return sock;
 }
 
-void set_sock_command(socket_t* sock, const char* command) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL");
-        exit(1);
-    }
-
-    sock->command = strdup(command);
+commands str_to_cmd_enum(const char* str) {
+    if (strcmp(str, "WRITE") == 0) return WRITE;
+    if (strcmp(str, "GET") == 0) return GET;
+    if (strcmp(str, "RM") == 0) return RM;
+    if (strcmp(str, "STOP") == 0) return STOP;
+    return NULL_VAL;
 }
 
-void set_sock_send_fn(socket_t* sock, const char* send_filename) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL");
-        exit(1);
-    }
-
-    sock->send_filename = strdup(send_filename);
+const char *cmd_enum_to_str(commands cmd) {
+    if (cmd == WRITE) return "WRITE";
+    if (cmd == GET) return "GET";
+    if (cmd == RM) return "RM";
+    if (cmd == STOP) return "STOP";
+    return NULL;
 }
 
-void set_sock_rcv_fn(socket_t* sock, const char* rcv_filename) {
+void set_sock_command(socket_t* sock, commands command) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
         exit(1);
     }
 
-    sock->rcv_filename = strdup(rcv_filename);
+    sock->command = command;
+}
+
+void set_sock_read_fn(socket_t* sock, const char* read_filename) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    sock->read_filename = strdup(read_filename);
+}
+
+void set_sock_write_fn(socket_t* sock, const char* write_filename) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    sock->write_filename = strdup(write_filename);
 }
 
 /**
@@ -64,52 +80,84 @@ void free_socket(socket_t* sock) {
         exit(1);
     }
 
-    if (sock->command != NULL) {
-        free(sock->command);
+    if (sock->read_filename != NULL) {
+        free(sock->read_filename);
     }
-    if (sock->send_filename != NULL) {
-        free(sock->send_filename);
-    }
-    if (sock->rcv_filename != NULL) {
-        free(sock->rcv_filename);
+    if (sock->write_filename != NULL) {
+        free(sock->write_filename);
     }
 
-    if (sock->client_sock >= 0) { // if valid file descriptor is assigned then close it
-        close(sock->client_sock);
+    if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
+        close(sock->client_sock_fd);
     }
-    if (sock->server_sock >= 0) {
-        close(sock->server_sock);
+    if (sock->server_sock_fd >= 0) {
+        close(sock->server_sock_fd);
     }
 
     free(sock);
 }
 
-void send_file(int send_socket, const char* read_filename) {
-    int file_path_len = strlen(LOCAL_FILE_PATH) + strlen(read_filename) + 1;
+void send_file(socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+    if (sock->read_filename == NULL) {
+        fprintf(stderr, "ERROR: read filename is NULL");
+        exit(1);
+
+    }
+    if (sock->server_sock_fd < 0) {
+        fprintf(stderr, "ERROR: server socket file descriptor is invalid");
+        exit(1);
+    }
+    if (sock->client_sock_fd < 0) {
+        fprintf(stderr, "ERROR: client socket file descriptor is invalid");
+        exit(1);
+    }
+
+    int send_socket;
+    switch (sock->command) {
+    case WRITE:
+        /* code */
+         send_socket = sock->client_sock_fd;
+        break;
+    case GET:
+        send_socket = sock->server_sock_fd;
+        break;
+    default:
+        break;
+    }
+
+    int file_path_len = strlen(LOCAL_FILE_PATH) + strlen(sock->read_filename) + 1;
     char file_path[file_path_len]; // ex: data/file.txt
-    sprintf(file_path, "%s%s", LOCAL_FILE_PATH, read_filename);
-    printf("Local File path: %s\n", file_path);
+    sprintf(file_path, "%s%s", LOCAL_FILE_PATH, sock->read_filename);
+    // printf("Local File path: %s\n", file_path);
     FILE *file = fopen(file_path, "rb"); // "rb" for read binary
     if (file == NULL) {
         perror("Error opening file");
+        free_socket(sock);
         exit(1);
     }
 
     // Get the size of the file
     if (fseek(file, 0, SEEK_END) != 0) {
         perror("Error seeking to end of file");
+        free_socket(sock);
         fclose(file);
         exit(1);
     }
     long file_size = ftell(file);
     if(file_size < 0) {
         perror("Error getting file size");
+        free_socket(sock);
         fclose(file);
         exit(1);
 
     }
     if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
         perror("Error seeking to start of file");
+        free_socket(sock);
         fclose(file);
         exit(1);
     }
@@ -139,12 +187,41 @@ void send_file(int send_socket, const char* read_filename) {
     }
     
     fclose(file);
-    close(send_socket);
     return;
 }
 
 
-void rcv_file(int rcv_socket, const char* write_filename) {
+void rcv_file(socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+    if (sock->write_filename == NULL) {
+        fprintf(stderr, "ERROR: write filename is NULL");
+        exit(1);
+
+    }
+    if (sock->server_sock_fd < 0) {
+        fprintf(stderr, "ERROR: server socket file descriptor is invalid");
+        exit(1);
+    }
+    if (sock->client_sock_fd < 0) {
+        fprintf(stderr, "ERROR: client socket file descriptor is invalid");
+        exit(1);
+    }
+
+    int rcv_socket;
+    switch (sock->command) {
+    case WRITE:
+        /* code */
+        rcv_socket = sock->server_sock_fd;
+        break;
+    case GET:
+        rcv_socket = sock->client_sock_fd;
+        break;
+    default:
+        break;
+    }
     uint32_t size;
     recv(rcv_socket, &size, sizeof(size), 0);
     size = ntohl(size);
@@ -153,7 +230,7 @@ void rcv_file(int rcv_socket, const char* write_filename) {
     char buffer[CHUNK_SIZE];
     ssize_t received;
 
-    FILE *out_file = fopen(write_filename, "wb");
+    FILE *out_file = fopen(sock->write_filename, "wb");
     int chunk_count = (size + CHUNK_SIZE - 1) / CHUNK_SIZE;
     for (int i = 0; i < chunk_count; i++) {
         while ((received = recv(rcv_socket, buffer, CHUNK_SIZE, 0)) > 0) {
