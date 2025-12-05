@@ -120,9 +120,7 @@ int main(int argc, char* argv[]) {
     // becomes: WRITE, data/file.txt, remote/file.txt
     for(int i = 1; i < argc; i++) {
       strcat(client_message, argv[i]);
-      if (i < argc - 1) {
-          strcat(client_message, DELIMITER);
-      }
+      strcat(client_message, DELIMITER);
       // account for if there's an omitted file name in the client msg and the argv[]
     }
 

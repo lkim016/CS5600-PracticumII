@@ -8,6 +8,81 @@
 
 #include "socket.h"
 
+/**
+ * @brief Create and initialize a server socket object on the heap.
+ *
+ * @return socket_t* - return the initialized cache object
+ */
+socket_t* create_socket() {
+    socket_t* sock = (socket_t*) calloc(1, sizeof(socket_t));
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: dynamic memory was not able to be allocated");
+        exit(1);
+    }
+    sock->command = NULL;
+    sock->send_filename = NULL;
+    sock->rcv_filename = NULL;
+
+    return sock;
+}
+
+void set_sock_command(socket_t* sock, const char* command) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    sock->command = strdup(command);
+}
+
+void set_sock_send_fn(socket_t* sock, const char* send_filename) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    sock->send_filename = strdup(send_filename);
+}
+
+void set_sock_rcv_fn(socket_t* sock, const char* rcv_filename) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    sock->rcv_filename = strdup(rcv_filename);
+}
+
+/**
+ * @brief free the socket object and its members.
+ *
+ * @param socket socket_t* - the pointer to the socket object
+ */
+void free_socket(socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    if (sock->command != NULL) {
+        free(sock->command);
+    }
+    if (sock->send_filename != NULL) {
+        free(sock->send_filename);
+    }
+    if (sock->rcv_filename != NULL) {
+        free(sock->rcv_filename);
+    }
+
+    if (sock->client_sock >= 0) { // if valid file descriptor is assigned then close it
+        close(sock->client_sock);
+    }
+    if (sock->server_sock >= 0) {
+        close(sock->server_sock);
+    }
+
+    free(sock);
+}
 
 void send_file(int send_socket, const char* read_filename) {
     int file_path_len = strlen(LOCAL_FILE_PATH) + strlen(read_filename) + 1;
