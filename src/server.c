@@ -34,7 +34,7 @@ void rcv_socket(int socket, int client_sock) {
   //-----------
   // Respond to client:
   strcpy(server_message, "Server is processing sent message...");
-  printf("%s\n", server_message); // check
+  // printf("%s\n", server_message); // check
   if (send(client_sock, server_message, strlen(server_message), 0) < 0){
     printf("Can't send\n");
     close(socket);
@@ -103,7 +103,7 @@ void rcv_socket(int socket, int client_sock) {
 
   FILE *out = fopen(server_filename, "wb");
   printf("Chunks to receive: %u\n", size/CHUNK_SIZE);
-  for (int i = 0; i < (size/CHUNK_SIZE); i++) {
+  for (int i = 0; i < (size/CHUNK_SIZE) + 1; i++) {
     while ((received = recv(client_sock, buffer, CHUNK_SIZE, 0)) > 0) {
         fwrite(buffer, 1, received, out);
     }
