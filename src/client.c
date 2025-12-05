@@ -125,6 +125,9 @@ int main(int argc, char* argv[]) {
       }
       // account for if there's an omitted file name in the client msg and the argv[]
     }
+
+    printf("Message size: %d\n", msg_size);
+    printf("Client Message: %s\n", client_message);
     
     // send client message
     if(send(socket_desc, client_message, strlen(client_message), 0) < 0){

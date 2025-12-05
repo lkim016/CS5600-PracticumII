@@ -19,6 +19,8 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-void send_file(int socket, const char* read_filename);
+void send_file(int send_socket, const char* read_filename);
+
+void rcv_file(int rcv_socket, const char* write_filename);
 
 #endif

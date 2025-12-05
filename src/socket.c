@@ -9,7 +9,7 @@
 #include "socket.h"
 
 
-void send_file(int socket, const char* read_filename) {
+void send_file(int send_socket, const char* read_filename) {
     int file_path_len = strlen(LOCAL_FILE_PATH) + strlen(read_filename) + 1;
     char file_path[file_path_len]; // ex: data/file.txt
     sprintf(file_path, "%s%s", LOCAL_FILE_PATH, read_filename);
@@ -41,7 +41,7 @@ void send_file(int socket, const char* read_filename) {
     
     // send the file size
     uint32_t size = htonl(file_size);
-    send(socket, &size, sizeof(size), 0);
+    send(send_socket, &size, sizeof(size), 0);
 
     // send the file data
     char buffer[CHUNK_SIZE]; // buffer to hold file chunks
@@ -50,7 +50,7 @@ void send_file(int socket, const char* read_filename) {
       size_t total_sent = 0;
 
       while (total_sent < bytes_read) {
-          ssize_t sent = send(socket, buffer + total_sent,
+          ssize_t sent = send(send_socket, buffer + total_sent,
                               bytes_read - total_sent, 0);
 
           if (sent < 0) {
@@ -64,8 +64,29 @@ void send_file(int socket, const char* read_filename) {
     }
     
     fclose(file);
-    close(socket);
+    close(send_socket);
     return;
+}
+
+
+void rcv_file(int rcv_socket, const char* write_filename) {
+    uint32_t size;
+    recv(rcv_socket, &size, sizeof(size), 0);
+    size = ntohl(size);
+    printf("File size: %u\n", size);
+
+    char buffer[CHUNK_SIZE];
+    ssize_t received;
+
+    FILE *out_file = fopen(write_filename, "wb");
+    int chunk_count = (size + CHUNK_SIZE - 1) / CHUNK_SIZE;
+    for (int i = 0; i < chunk_count; i++) {
+        while ((received = recv(rcv_socket, buffer, CHUNK_SIZE, 0)) > 0) {
+            fwrite(buffer, 1, received, out_file);
+        }
+    }
+
+    fclose(out_file);
 }
 
 
