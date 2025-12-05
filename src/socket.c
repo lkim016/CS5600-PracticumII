@@ -7,9 +7,9 @@
  */
 
 #include "socket.h"
-// write_cmd() {}
+// socket_rcv_write() {}
+// socket_send_write() {}
 
-// 
 
 ssize_t send_all(int sock, const void *buf, size_t len) {
     size_t sent = 0;

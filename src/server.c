@@ -102,7 +102,7 @@ void rcv_socket(int socket, int client_sock) {
   ssize_t received;
 
   FILE *out = fopen(server_filename, "wb");
-
+  printf("Chunks to receive: %u\n", size/CHUNK_SIZE);
   for (int i = 0; i < (size/CHUNK_SIZE); i++) {
     while ((received = recv(client_sock, buffer, CHUNK_SIZE, 0)) > 0) {
         fwrite(buffer, 1, received, out);

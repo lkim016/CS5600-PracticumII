@@ -57,9 +57,10 @@ void send_socket(int socket, int arg_count, char* args[]) {
       return;
     }
     //------
-    // int fp_size = strlen(LOCAL_FILE_PATH) + strlen(args[2]) + 1;
-    const char *file_path = strcat(LOCAL_FILE_PATH, args[2]); // ex: data/file.txt
-    printf("File path: %s\n", file_path);
+    int fp_size = strlen(LOCAL_FILE_PATH) + strlen(args[2]) + 1;
+    char file_path[fp_size]; // ex: data/file.txt
+    sprintf(file_path, "%s%s", LOCAL_FILE_PATH, args[2]);
+    printf("Local File path: %s\n", file_path);
     FILE *file = fopen(file_path, "rb"); // "rb" for read binary
     if (file == NULL) {
         perror("Error opening file");
@@ -111,6 +112,7 @@ void send_socket(int socket, int arg_count, char* args[]) {
     }
     
     fclose(file);
+
     return;
   }
     /*
@@ -171,13 +173,13 @@ void send_socket(int socket, int arg_count, char* args[]) {
  */
 int main(int argc, char* argv[]) {
 
-  if (argc < 3) {
+  if (argc < 2) {
       printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
       return -1;
-  } else if (argc < 4 && (strcmp(argv[1], "WRITE") == 0 || strcmp(argv[1], "GET") == 0 || strcmp(argv[1], "RM") == 0)) {
+  } else if (argc < 3 && (strcmp(argv[1], "WRITE") == 0 || strcmp(argv[1], "GET") == 0 || strcmp(argv[1], "RM") == 0)) {
       printf("Usage: %s %s <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0], argv[1]);
       return -1;
-  } else if (argc < 5 || strcmp(argv[1], "STOP") == 0) { // if local file is omitted then use current folder
+  } else if ((argc >= 3 && argc < 5) || strcmp(argv[1], "STOP") == 0) { // if local file is omitted then use current folder
     int socket_desc;
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
     char server_message[MSG_SIZE];
