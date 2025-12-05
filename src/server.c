@@ -62,7 +62,7 @@ void rcv_socket(int socket, int client_sock) {
     token = strtok(NULL, DELIMITER);
   }
 
-  // Store command
+  // Store command - need to account for a null server_filename
   int src_str_index = 0;
   char command[cmd_len + 1];
   strncpy(command, client_message + src_str_index, cmd_len);
@@ -102,7 +102,7 @@ void rcv_socket(int socket, int client_sock) {
   ssize_t received;
 
   FILE *out = fopen(server_filename, "wb");
-  printf("Chunks to receive: %u\n", size/CHUNK_SIZE);
+  printf("Chunks to receive: %f\n", (size/CHUNK_SIZE));
   for (int i = 0; i < (size/CHUNK_SIZE) + 1; i++) {
     while ((received = recv(client_sock, buffer, CHUNK_SIZE, 0)) > 0) {
         fwrite(buffer, 1, received, out);

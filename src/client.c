@@ -49,6 +49,7 @@ void send_socket(int socket, int arg_count, char* args[]) {
       if (i < arg_count - 1) {
           strcat(client_message, DELIMITER);
       }
+      // account for if there's a missing file name
     }
 
     if(send(socket, client_message, strlen(client_message), 0) < 0){
