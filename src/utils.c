@@ -122,39 +122,59 @@ void send_file(socket_t* sock, int sock_fd) {
     
     // send the file size
     uint32_t size = htonl(file_size);
-    ssize_t sent_size = send(sock_fd, &size, sizeof(size), 0);
-
-    if (sent_size < 0) {
+    if (send(sock_fd, &size, sizeof(size), 0) < 0) {
         perror("Error sending file size");
         fclose(file);
         free_socket(sock);
         exit(1);
     }
 
-    // send the file data
-    char buffer[CHUNK_SIZE]; // buffer to hold file chunks
-    size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
-      size_t total_sent = 0;
+    // Wait for acknowledgment from the server before sending file data
+    char *ack = NULL;
+    if (recv(sock_fd, ack, 1, 0) <= 0) {
+        perror("Error receiving acknowledgment from server");
+        fclose(file);
+        return;
+    }
 
-      while (total_sent < bytes_read) {
-          ssize_t sent = send(sock_fd, buffer + total_sent,
-                              bytes_read - total_sent, 0);
+    if (strcmp(ack, "Y") == 0) {
+        // send the file data
+        char buffer[CHUNK_SIZE]; // buffer to hold file chunks
+        size_t bytes_read;
+        while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
+        size_t total_sent = 0;
 
-          if (sent < 0) {
-              perror("Unable to send message\n");
-              // handle error (disconnect, etc.)
-              fclose(file);
-              free_socket(sock);
-              exit(1);
-          }
+        while (total_sent < bytes_read) {
+            ssize_t sent = send(sock_fd, buffer + total_sent,
+                                bytes_read - total_sent, 0);
 
-          total_sent += sent;
+            if (sent < 0) {
+                perror("Unable to send message\n");
+                // handle error (disconnect, etc.)
+                fclose(file);
+                free_socket(sock);
+                exit(1);
+            }
+
+            printf("Bytes Sent: %lu", sent);
+
+            total_sent += sent;
+            }
         }
     }
     
+    if (recv(sock_fd, ack, 1, 0) <= 0) {
+        perror("Error receiving acknowledgment from server");
+        fclose(file);
+        return;
+    }
+
     fclose(file);
-    printf("File sent successfully!\n");
+    if (strcmp(ack, "Y")) {
+        printf("File sent successfully!\n");
+    } else {
+        printf("File was not sent successfully.\n");
+    }
 }
 
 
@@ -174,16 +194,21 @@ int rcv_file(socket_t* sock, int sock_fd) {
     }
 
     uint32_t size;
-    ssize_t received_size = recv(sock_fd, &size, sizeof(size), 0);
-    if (received_size <= 0) {
+    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
         perror("Error receiving file size\n");
         return -1;
     }
     size = ntohl(size);
-    printf("File size: %u\n", size);
 
+    // Send acknowledgment to client
+    char *ack = "Y";
     if (size == 0) {
         fprintf(stderr, "Received file size is 0. No file to receive.\n");
+        ack = "N";
+    }
+
+    if (send(sock_fd, &ack, 1, 0) < 0) {
+        perror("Error sending acknowledgment");
         return -1;
     }
 
@@ -203,8 +228,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         if (received < 0) {
             perror("Error receiving data\n");
             fclose(out_file);
-            free_socket(sock);
-            exit(1);
+            return -1;
         } else if (received == 0) {
             // No more data, but the total received doesn't match the expected size
             fprintf(stderr, "Warning: Connection closed prematurely\n");
@@ -216,8 +240,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         if (written != received) {
             perror("Error writing to file");
             fclose(out_file);
-            free_socket(sock);
-            exit(1);
+            return -1;
         }
 
         total_received += received;
@@ -231,6 +254,13 @@ int rcv_file(socket_t* sock, int sock_fd) {
 
         // Optionally print progress (to debug or monitor)
         printf("Received %u/%u bytes\n", total_received, size);
+    }
+
+    // Final acknowledgment after receiving all data
+    ack = "Y";
+    if (send(sock_fd, &ack, 1, 0) < 0) {
+        perror("Error sending final acknowledgment");
+        return -1;
     }
 
     fclose(out_file);
