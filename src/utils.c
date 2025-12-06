@@ -207,7 +207,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         ack = "N";
     }
 
-    if (send(sock_fd, &ack, 1, 0) < 0) {
+    if (send(sock->server_sock_fd, &ack, 1, 0) < 0) {
         perror("Error sending acknowledgment\n");
         return -1;
     }
@@ -258,7 +258,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
 
     // Final acknowledgment after receiving all data
     ack = "Y";
-    if (send(sock_fd, &ack, 1, 0) < 0) {
+    if (send(sock->server_sock_fd, &ack, 1, 0) < 0) {
         perror("Error sending final acknowledgment\n");
         return -1;
     }

@@ -33,7 +33,7 @@ void server_cmd_handles(socket_t* sock) {
   switch(sock->command) {
     case WRITE:
       if (folder_not_exists_make(sock->write_dirs) == 1) {
-          if (rcv_file(sock, sock->server_sock_fd) < 0 ) {
+          if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
             msg = "Error receiving file\n";
           } else {
             msg = "Server is processing...\n";
@@ -42,7 +42,7 @@ void server_cmd_handles(socket_t* sock) {
           msg = "Warning: File was not received - issues with folder path to write out to\n";
         }
 
-        if (send_msg(sock->client_sock_fd, msg) < 0) {
+        if (send_msg(sock->server_sock_fd, msg) < 0) {
             perror("Failed to send response to client");
         }
 
