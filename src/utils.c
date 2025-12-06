@@ -8,12 +8,7 @@
 
 #include "utils.h"
 
-/**
- * @brief checks to see if each folder in the path exists, if not then it creates it
- *
- * 
- * @param folder_path const char* - a constant char string that is the socket metadata object's folder path (write_dirs)
- */
+
 int folder_not_exists_make(const char* folder_path) {
     if (folder_path == NULL) {
         printf("Invalid path!\n");
@@ -172,62 +167,59 @@ void rcv_file(socket_t* sock, int sock_fd) {
     }
 
     
-    if (folder_not_exists_make(sock->write_dirs) == 1) {
+    
 
-        FILE *out_file = fopen(sock->write_filepath, "wb");
-        if (out_file == NULL) {
-            perror("Error opening write file\n");
+    FILE *out_file = fopen(sock->write_filepath, "wb");
+    if (out_file == NULL) {
+        perror("Error opening write file\n");
+        free_socket(sock);
+        exit(1);
+    }
+
+    uint32_t size;
+    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
+        perror("Error receiving file size\n");
+        fclose(out_file);
+        free_socket(sock);
+        exit(1);
+    }
+    size = ntohl(size);
+    printf("File size: %u\n", size);
+
+    char buffer[CHUNK_SIZE];
+    ssize_t received;
+    uint32_t total_received = 0;  // To track total bytes received
+
+    // Loop through and receive the file in chunks
+    while (total_received < size) {
+        received = recv(sock_fd, buffer, CHUNK_SIZE, 0);
+        if (received < 0) {
+            perror("Error receiving data\n");
+            fclose(out_file);
             free_socket(sock);
             exit(1);
+        } else if (received == 0) {
+            // No more data, but the total received doesn't match the expected size
+            fprintf(stderr, "Warning: Connection closed prematurely\n");
+            break;
         }
 
-        uint32_t size;
-        if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
-            perror("Error receiving file size\n");
+        // Write the received bytes to the file
+        fwrite(buffer, 1, received, out_file);
+        total_received += received;
+
+        // Check if we have received all bytes
+        if (total_received > size) {
+            fprintf(stderr, "Error: More data received than expected\n");
             fclose(out_file);
             free_socket(sock);
             exit(1);
         }
-        size = ntohl(size);
-        printf("File size: %u\n", size);
 
-        char buffer[CHUNK_SIZE];
-        ssize_t received;
-        uint32_t total_received = 0;  // To track total bytes received
-
-        // Loop through and receive the file in chunks
-        while (total_received < size) {
-            received = recv(sock_fd, buffer, CHUNK_SIZE, 0);
-            if (received < 0) {
-                perror("Error receiving data\n");
-                fclose(out_file);
-                free_socket(sock);
-                exit(1);
-            } else if (received == 0) {
-                // No more data, but the total received doesn't match the expected size
-                fprintf(stderr, "Warning: Connection closed prematurely\n");
-                break;
-            }
-
-            // Write the received bytes to the file
-            fwrite(buffer, 1, received, out_file);
-            total_received += received;
-
-            // Check if we have received all bytes
-            if (total_received > size) {
-                fprintf(stderr, "Error: More data received than expected\n");
-                fclose(out_file);
-                free_socket(sock);
-                exit(1);
-            }
-
-            printf("Received %u/%u bytes\n", total_received, size);
-        }
-
-        fclose(out_file);
-    } else {
-        printf("Warning: File was not received - issues with folder path to write out to");
+        printf("Received %u/%u bytes\n", total_received, size);
     }
+
+    fclose(out_file);
 
 }
 

@@ -34,9 +34,13 @@ void server_cmd_handles(socket_t* sock) {
       exit(0);
       break;
     case WRITE:
-      rcv_file(sock, sock->server_sock_fd);
+      if (folder_not_exists_make(sock->write_dirs) == 1) {
+          rcv_file(sock, sock->server_sock_fd);
+          msg = "Server is processing...\n";
+      } else {
+          msg = "Warning: File was not received - issues with folder path to write out to\n";
+      }
 
-      msg = "Server is processing...\n";
       send_msg(sock->client_sock_fd, msg);
 
       break;

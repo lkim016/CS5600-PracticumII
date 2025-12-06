@@ -21,6 +21,13 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+/**
+ * @brief checks to see if each folder in the path exists, if not then it creates it
+ *
+ * 
+ * @param folder_path const char* - a constant char string that is the socket metadata object's folder path (write_dirs)
+ */
+int folder_not_exists_make(const char* folder_path);
 
 /**
  * @brief depending on the command, a TCP socket is sending a message to the other TCP socket either client or message.
