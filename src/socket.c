@@ -166,36 +166,22 @@ void free_socket(socket_t* sock) {
     free(sock);
 }
 
-void send_file(socket_t* sock) {
+void send_file(socket_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
+        free_socket(sock);
         exit(1);
     }
     if (sock->read_filepath == NULL) {
         fprintf(stderr, "ERROR: read filename is NULL");
+        free_socket(sock);
         exit(1);
 
     }
-    if (sock->server_sock_fd < 0) {
-        fprintf(stderr, "ERROR: server socket file descriptor is invalid");
+    if (sock_fd < 0) {
+        fprintf(stderr, "ERROR: socket file descriptor is invalid");
+        free_socket(sock);
         exit(1);
-    }
-    if (sock->client_sock_fd < 0) {
-        fprintf(stderr, "ERROR: client socket file descriptor is invalid");
-        exit(1);
-    }
-
-    int send_socket;
-    switch (sock->command) {
-    case WRITE:
-        /* code */
-         send_socket = sock->client_sock_fd;
-        break;
-    case GET:
-        send_socket = sock->server_sock_fd;
-        break;
-    default:
-        break;
     }
 
     // printf("Local File path: %s\n", file_path);
@@ -230,7 +216,7 @@ void send_file(socket_t* sock) {
     
     // send the file size
     uint32_t size = htonl(file_size);
-    send(send_socket, &size, sizeof(size), 0);
+    send(sock_fd, &size, sizeof(size), 0);
 
     // send the file data
     char buffer[CHUNK_SIZE]; // buffer to hold file chunks
@@ -239,12 +225,14 @@ void send_file(socket_t* sock) {
       size_t total_sent = 0;
 
       while (total_sent < bytes_read) {
-          ssize_t sent = send(send_socket, buffer + total_sent,
+          ssize_t sent = send(sock_fd, buffer + total_sent,
                               bytes_read - total_sent, 0);
 
           if (sent < 0) {
               perror("Unable to send message\n");
               // handle error (disconnect, etc.)
+              fclose(file);
+              free_socket(sock);
               exit(1);
           }
 
@@ -253,48 +241,27 @@ void send_file(socket_t* sock) {
     }
     
     fclose(file);
-    return;
+    printf("File sent successfully!\n");
 }
 
 
-void rcv_file(socket_t* sock) {
+void rcv_file(socket_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
+        free_socket(sock);
         exit(1);
     }
     if (sock->write_filepath == NULL) {
         fprintf(stderr, "ERROR: write filename is NULL");
+        free_socket(sock);
         exit(1);
 
     }
-    if (sock->server_sock_fd < 0) {
-        fprintf(stderr, "ERROR: server socket file descriptor is invalid");
+    if (sock_fd < 0) {
+        fprintf(stderr, "ERROR: socket file descriptor is invalid");
+        free_socket(sock);
         exit(1);
     }
-    if (sock->client_sock_fd < 0) {
-        fprintf(stderr, "ERROR: client socket file descriptor is invalid");
-        exit(1);
-    }
-
-    int rcv_socket;
-    switch (sock->command) {
-    case WRITE:
-        /* code */
-        rcv_socket = sock->server_sock_fd;
-        break;
-    case GET:
-        rcv_socket = sock->client_sock_fd;
-        break;
-    default:
-        break;
-    }
-    uint32_t size;
-    recv(rcv_socket, &size, sizeof(size), 0);
-    size = ntohl(size);
-    printf("File size: %u\n", size);
-
-    char buffer[CHUNK_SIZE];
-    ssize_t received;
 
     FILE *out_file = fopen(sock->write_filepath, "wb");
     if (out_file == NULL) {
@@ -303,12 +270,49 @@ void rcv_file(socket_t* sock) {
         exit(1);
     }
 
-    int chunk_count = (size + CHUNK_SIZE - 1) / CHUNK_SIZE;
-    for (int i = 0; i < chunk_count; i++) {
-        while ((received = recv(rcv_socket, buffer, CHUNK_SIZE, 0)) > 0) {
-            fwrite(buffer, 1, received, out_file);
+    uint32_t size;
+    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
+        perror("Error receiving file size");
+        fclose(out_file);
+        free_socket(sock);
+        exit(1);
+    }
+    size = ntohl(size);
+    printf("File size: %u\n", size);
+
+    char buffer[CHUNK_SIZE];
+    ssize_t received;
+    uint32_t total_received = 0;  // To track total bytes received
+
+    // Loop through and receive the file in chunks
+    while (total_received < size) {
+        received = recv(sock_fd, buffer, CHUNK_SIZE, 0);
+        if (received < 0) {
+            perror("Error receiving data");
+            fclose(out_file);
+            free_socket(sock);
+            exit(1);
+        } else if (received == 0) {
+            // No more data, but the total received doesn't match the expected size
+            fprintf(stderr, "Warning: Connection closed prematurely\n");
+            break;
         }
+
+        // Write the received bytes to the file
+        fwrite(buffer, 1, received, out_file);
+        total_received += received;
+
+        // Check if we have received all bytes
+        if (total_received > size) {
+            fprintf(stderr, "Error: More data received than expected\n");
+            fclose(out_file);
+            free_socket(sock);
+            exit(1);
+        }
+
+        printf("Received %u/%u bytes\n", total_received, size);
     }
 
     fclose(out_file);
+    printf("File received successfully!\n");
 }

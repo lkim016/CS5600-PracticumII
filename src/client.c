@@ -25,33 +25,49 @@
  */
 void client_cmd_handles(socket_t* sock) {
 
-    // handle different commands
-    switch (sock->command) {
-      case WRITE:
-        if (sock->read_filepath == NULL) { // need to handle the file within the command since it can differ based on the command
-          printf("Invalid file path\n");
-          free_socket(sock);
-          exit(1);
-        }
+  char server_message[MSG_SIZE];
+  // Clean buffers:
+  memset(server_message,'\0',sizeof(server_message));
 
-        // send the file to server
-        send_file(sock);
-        /*
-      } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
-        break;
-      } else if(strcmp(command,  "RM") == 0) {
-        // For GET and RM, no file data is sent
-        if (send_message(socket, client_message, strlen(client_message), NULL, 0) < 0) {
-            printf("Failed to send message\n");
-        }
-      */
-        break;
-      case STOP:
-        exit(0);
-        break;
-      default:
-        printf("Unknown command\n");
-        break;
+  // handle different commands
+  switch (sock->command) {
+    case STOP:
+      // Receive the server's response:
+      if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+        printf("Error while receiving server's msg\n");
+        free_socket(sock);
+        return exit(1);
+      }
+      
+      printf("Server's response: %s\n",server_message);
+      exit(0);
+      break;
+    case WRITE:
+      if (sock->read_filepath == NULL) { // need to handle the file within the command since it can differ based on the command
+        printf("Invalid file path\n");
+        free_socket(sock);
+        exit(1);
+      }
+
+      // send the file to server
+      send_file(sock, sock->client_sock_fd);
+      break;
+    case GET:
+      rcv_file(sock, sock->server_sock_fd);
+
+      /*
+    } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
+      break;
+    } else if(strcmp(command,  "RM") == 0) {
+      // For GET and RM, no file data is sent
+      if (send_message(socket, client_message, strlen(client_message), NULL, 0) < 0) {
+          printf("Failed to send message\n");
+      }
+    */
+      break;
+    default:
+      printf("Unknown command\n");
+      break;
     }
 }
 
@@ -74,10 +90,6 @@ int main(int argc, char* argv[]) {
     // int socket_desc;
     socket_t* client_sck = create_socket();
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
-    char server_message[MSG_SIZE];
-    
-    // Clean buffers:
-    memset(server_message,'\0',sizeof(server_message));
     
     // Create socket:
     client_sck->client_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -155,15 +167,6 @@ int main(int argc, char* argv[]) {
     //-----------
 
     client_cmd_handles(client_sck);
-    
-    // Receive the server's response:
-    if(recv(client_sck->client_sock_fd, server_message, sizeof(server_message), 0) < 0){
-      printf("Error while receiving server's msg\n");
-      close(client_sck->client_sock_fd);
-      return -1;
-    }
-    
-    printf("Server's response: %s\n",server_message);
     
     // Close the socket:
     free_socket(client_sck);

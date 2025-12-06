@@ -99,14 +99,16 @@ void free_socket(socket_t* sock);
  * @brief depending on the command, a TCP socket is being asked to read a file from its local env and then send it to the other TCP socket.
  *
  * @param socket socket_t* - the pointer to the socket metadata object
+ * @param sock_fd int - the socket file descriptor that the file data will be sent to
  */
-void send_file(socket_t* sock);
+void send_file(socket_t* sock, int sock_fd);
 
 /**
  * @brief depending on the command, a TCP socket is being asked to recevied a read file from the other TCP socket and then write it out to its local env.
  *
  * @param socket socket_t* - the pointer to the socket metadata object
+ * @param sock_fd int - the socket file descriptor that the file data will be received by
  */
-void rcv_file(socket_t* sock);
+void rcv_file(socket_t* sock, int sock_fd);
 
 #endif

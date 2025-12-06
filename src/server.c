@@ -31,7 +31,7 @@ void server_cmd_handles(socket_t* sock) {
       exit(0);
       break;
     case WRITE:
-      rcv_file(sock);
+      rcv_file(sock, sock->server_sock_fd);
       break;
     default:
       break;
@@ -130,9 +130,9 @@ int main(void) {
 
   printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
 
-    server_cmd_handles(server_sck);
+  server_cmd_handles(server_sck);
 
-    //-----------
+  //-----------
   char server_message[CHUNK_SIZE];
     
   memset(server_message, '\0', sizeof(server_message));
