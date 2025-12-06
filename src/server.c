@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include "config.h"
 #include "socket.h"
+#include "utils.h"
 
 
 void server_cmd_handles(socket_t* sock) {
@@ -99,7 +100,6 @@ int main(void) {
     }
     printf("Msg from client: %s\n", client_message);
 
-    /*
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
@@ -108,14 +108,15 @@ int main(void) {
         commands cmd = str_to_cmd_enum(token);
         set_sock_command(server_sck, cmd);
       } else if (token_count == 1) {
-        set_sock_read_fn(server_sck, token);
+        split_read_path(token, server_sck);
+        set_sock_read_filepath(server_sck);
       } else if (token_count == 2) {
-        set_sock_write_fn(server_sck, token);
+        split_write_path(token, server_sck);
+        set_sock_write_filepath(server_sck);
       }
       token_count++;
       token = strtok(NULL, DELIMITER);
     }
-    */
 
   printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
 
