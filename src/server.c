@@ -18,6 +18,7 @@
 #include "socket.h"
 #include "utils.h"
 
+
 /**
  * @brief handles the CLI args commands for the server
  *
@@ -42,7 +43,7 @@ void server_cmd_handles(socket_t* sock) {
               msg = "File sent successfully!\n";
             }
           } else {
-            msg = "Warning: File was not received - issues with folder path to write out to\n";
+              msg = "Warning: File was not received - issues with folder path to write out to\n";
           }
 
           if (send_msg(sock->client_sock_fd, msg) < 0) {
@@ -63,17 +64,19 @@ void server_cmd_handles(socket_t* sock) {
         break;
     case RM:
         const char* rm_obj = sock->first_filepath;
-        printf("rm_obj: %s\n", rm_obj);
         // if command is RM then check if
         if(rm_file_or_folder(sock) != 1) {
-            sprintf(msg, "Failed to remove %s\n", rm_obj);
+            const char* const_msg = "Failed to remove";
+            msg = dyn_msg(msg, const_msg, rm_obj);
         } else {
-            sprintf(msg, "Successfully removed %s\n", rm_obj);
+            const char* const_msg = "Successfully removed";
+            msg = dyn_msg(msg, const_msg, rm_obj);
         }
 
         if (send_msg(sock->client_sock_fd, msg) < 0) {
             perror("Failed to send response to client\n");
         }
+        free(msg);
         break;
     case STOP:
         msg = "Exiting Server...\n";
@@ -169,7 +172,6 @@ int main(void) {
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
-      printf("%s\n", token);
       if (token_count == 0) {
         commands cmd = str_to_cmd_enum(token);
         set_sock_command(server_sck, cmd);

@@ -8,6 +8,13 @@
 
 #include "utils.h"
 
+// need to free() result
+char* dyn_msg(char* msg_ptr, const char* part1, const char* part2) {
+    msg_ptr = calloc(strlen(part1) + 2 + strlen(part2) + 1, sizeof(char));
+    sprintf(msg_ptr, "%s %s\n", part1, part2);
+    return msg_ptr;
+}
+
 
 int folder_not_exists_make(const char* file_path) {
     // Find the last occurrence of the directory separator - Copy the directory part

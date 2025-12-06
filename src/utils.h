@@ -22,9 +22,17 @@
 #define UTILS_H
 
 /**
+ * @brief constructs a message that is concatenated in dynamic memory allocation to be sent over TCP
+ *
+ * @param msg_ptr char* - the msg pointer to return the dynamic memory allocated string to
+ * @param part1 const char* - a constant char string that will make up the first part of the new string
+ * @param part2 const char* - a constant char string that will make up the second part of the new string
+ */
+char* dyn_msg(char* msg_ptr, const char* part1, const char* part2);
+
+/**
  * @brief checks to see if each folder in the path exists, if not then it creates it
  *
- * 
  * @param folder_path const char* - a constant char string that is the socket metadata object's folder path (write_dirs)
  */
 int folder_not_exists_make(const char* folder_path);
@@ -32,7 +40,6 @@ int folder_not_exists_make(const char* folder_path);
 /**
  * @brief called by RM command to remove a file or folder indicated by first file argument
  *
- * 
  * @param socket socket_t* - the pointer to the socket metadata object
  * @return int - 1 for success, -1 for error, 0 for fail
  */
