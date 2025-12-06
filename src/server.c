@@ -63,6 +63,7 @@ void server_cmd_handles(socket_t* sock) {
         break;
     case RM:
         const char* rm_obj = sock->first_filepath;
+        printf("rm_obj: %s\n", rm_obj);
         // if command is RM then check if
         if(rm_file_or_folder(sock) != 1) {
             sprintf(msg, "Failed to remove %s\n", rm_obj);
