@@ -24,7 +24,7 @@
  * @param socket socket_t* - the pointer to the server socket metadata object
  */
 void server_cmd_handles(socket_t* sock) {
-  const char* msg = NULL;
+  char* msg = NULL;
   switch(sock->command) {
     case STOP:
       msg = "Exiting Server...\n";
@@ -36,14 +36,17 @@ void server_cmd_handles(socket_t* sock) {
     case WRITE:
       rcv_file(sock, sock->server_sock_fd);
 
-      msg = "Server is processing command...\n";
+      msg = "Server is processing...\n";
       send_msg(sock->client_sock_fd, msg);
 
+      break;
+    case GET:
+      // send the file to server
+      send_file(sock, sock->server_sock_fd);
       break;
     default:
       break;
   }
-
 }
 
 /**

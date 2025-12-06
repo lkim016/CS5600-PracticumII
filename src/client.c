@@ -25,37 +25,31 @@
  */
 void client_cmd_handles(socket_t* sock) {
 
-  char server_message[MSG_SIZE];
-  // Clean buffers:
-  memset(server_message,'\0',sizeof(server_message));
-
   // handle different commands
+  char* msg = NULL;
   switch (sock->command) {
     case STOP:
       // Receive the server's response:
-      if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+      if(recv(sock->client_sock_fd, msg, sizeof(msg), 0) < 0) {
         printf("Error while receiving server's msg\n");
         free_socket(sock);
         return exit(1);
       }
       
-      printf("Server's response: %s\n",server_message);
+      printf("Server's response: %s\n", msg);
       exit(0);
       break;
     case WRITE:
-      if (sock->read_filepath == NULL) { // need to handle the file within the command since it can differ based on the command
-        printf("Invalid file path\n");
-        free_socket(sock);
-        exit(1);
-      }
-
       // send the file to server
       send_file(sock, sock->client_sock_fd);
       break;
     case GET:
-      rcv_file(sock, sock->server_sock_fd);
+      rcv_file(sock, sock->client_sock_fd);
+      
+      msg = "Client is processing...\n";
+      send_msg(sock->server_sock_fd, msg);
 
-      /*
+    /*
     } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
       break;
     } else if(strcmp(command,  "RM") == 0) {
