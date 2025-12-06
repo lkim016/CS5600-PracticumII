@@ -1,6 +1,8 @@
-/*
- * client.c -- TCP Socket Client
+/**
+ * @file client.c / source file for TCP Socket Client.
+ * @authors Lori Kim / CS5600 / Northeastern University
  * 
+ * @date Nov 11, 2025 / Fall 2025
  * adapted from: 
  *   https://www.educative.io/answers/how-to-implement-tcp-sockets-in-c
  */
@@ -13,6 +15,7 @@
 #include <unistd.h>
 #include "config.h"
 #include "socket.h"
+#include "utils.h"
 
 
 void client_cmd_handles(socket_t* sock) {

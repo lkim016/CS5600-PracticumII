@@ -1,6 +1,8 @@
-/*
- * server.c -- TCP Socket Server
+/**
+ * @file server.c / source file for TCP Socket Server.
+ * @authors Lori Kim / CS5600 / Northeastern University
  * 
+ * @date Nov 11, 2025 / Fall 2025
  * adapted from: 
  *   https://www.educative.io/answers/how-to-implement-tcp-sockets-in-c
  */

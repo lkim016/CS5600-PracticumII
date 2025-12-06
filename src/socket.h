@@ -49,10 +49,6 @@ const char *cmd_enum_to_str(commands cmd);
 
 void set_sock_command(socket_t* sock, commands command);
 
-void split_read_path(const char *path, socket_t* sock);
-
-void split_write_path(const char *path, socket_t* sock);
-
 void print_read_file_info(socket_t* sock);
 
 void set_sock_read_filepath(socket_t* sock, const char* read_filepath);
