@@ -115,9 +115,11 @@ int main(int argc, char* argv[]) {
     set_sock_command(client_sck, str_to_cmd_enum(argv[1]));
     if (argc > 2) { // set read_filepath
         split_read_path(argv[2], client_sck);
+        set_sock_read_filepath(client_sck);
     }
     if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
         split_write_path(argv[3], client_sck);
+        set_sock_write_filepath(client_sck);
     }
 
     print_read_file_info(client_sck);

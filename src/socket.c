@@ -19,7 +19,12 @@ socket_t* create_socket() {
         fprintf(stderr, "ERROR: dynamic memory was not able to be allocated");
         exit(1);
     }
+
     sock->command = NULL_VAL;
+    sock->read_pdir = NULL;
+    sock->write_pdir = NULL;
+    sock->read_filename = NULL;
+    sock->write_filename = NULL;
     sock->read_filepath = NULL;
     sock->write_filepath = NULL;
 
@@ -51,80 +56,75 @@ void set_sock_command(socket_t* sock, commands command) {
     sock->command = command;
 }
 
-
 void print_read_file_info(socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
         return;
     }
-    printf("Parent Dir: %s, Filename: %s", sock->read_pdir, sock->read_filename);
+    printf("Parent Dir: %s, Filename: %s\n", sock->read_pdir, sock->read_filename);
 }
 
-/*
-const char *get_default_read_path(socket_t* sock) {
-    switch(sock->command) {
-        case WRITE:
-            int file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(DEFAULT_CLIENT_FILENAME) + 1;
-            char result[file_path_len]; // ex: data/file.txt
-            sprintf(result, "%s%s", DEFAULT_CLIENT_PATH, DEFAULT_CLIENT_FILENAME);
-        case GET:
-            int file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(DEFAULT_SERVER_FILENAME) + 1;
-            char result[file_path_len]; // ex: data/file.txt
-            sprintf(result, "%s%s", DEFAULT_SERVER_PATH, DEFAULT_SERVER_FILENAME);
-            sock->read_filepath = strdup(result);
-            return result;
-        default:
-            return NULL;
-    }
-}
-
-void set_sock_read_filepath(socket_t* sock, const char* read_filepath) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL");
-        exit(1);
-    }
-    // check if there's a folder if not then use default path and file
-    if (read_filepath == NULL) {
-        const char* default_read_path = get_default_read_path(sock);
-        sock->read_filepath = strdup(default_read_path);
-    } else {
-        // check if there's an extension
-        sock->read_filepath = strdup(read_filepath);
-    }
-}
-
-const char *get_default_write_path(socket_t* sock) {
-    switch(sock->command) {
-        case WRITE:
-            int file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(DEFAULT_SERVER_FILENAME) + 1;
-            char result[file_path_len]; // ex: data/file.txt
-            sprintf(result, "%s%s", DEFAULT_SERVER_PATH, DEFAULT_SERVER_FILENAME);
-            return result;
-        case GET:
-            int file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(DEFAULT_CLIENT_FILENAME) + 1;
-            char result[file_path_len]; // ex: data/file.txt
-            sprintf(result, "%s%s", DEFAULT_CLIENT_PATH, DEFAULT_CLIENT_FILENAME);
-            return result;
-        default:
-            return NULL;
-    }
-}
-
-void set_sock_write_filepath(socket_t* sock, const char* write_filepath) {
+void set_sock_read_filepath(socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
         exit(1);
     }
 
+    int file_path_len = 0;
     // check if there's a folder if not then use default path and file
-    if (write_filepath == NULL) {
-        const char* default_write_path = get_default_read_path(sock);
-        sock->write_filepath = strdup(default_write_path);
+    // need to check if the sock->read_pdir is null - if pdir is null then just return filename
+    if (sock->read_pdir != NULL) {
+        file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(sock->read_pdir) + strlen(sock->read_filename) + 1;
+        char path[file_path_len]; // ex: data/file.txt
+        sprintf(path, "%s%s%s", DEFAULT_CLIENT_PATH, sock->read_pdir, sock->read_filename);
+        sock->read_filepath = strdup(path);
     } else {
-        sock->write_filepath = strdup(write_filepath);
+        file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(sock->read_filename) + 1;
+        char path[file_path_len];
+        sprintf(path, "%s%s", DEFAULT_CLIENT_PATH, sock->read_filename);
+        sock->read_filepath = strdup(path);
     }
 }
-*/
+
+void set_sock_write_filepath(socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+
+    int file_path_len = 0;
+    switch(sock->command) {
+        case WRITE:
+            if (sock->write_filename != NULL) {
+                file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(sock->write_filename) + 1;
+                char path[file_path_len]; // ex: data/file.txt
+                sprintf(path, "%s%s", DEFAULT_SERVER_PATH, sock->write_filename);
+                sock->write_filepath = strdup(path);
+            } else {
+                file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(sock->read_filename) + 1;
+                char path[file_path_len]; // ex: data/file.txt
+                sprintf(path, "%s%s", DEFAULT_SERVER_PATH, sock->read_filename);
+                sock->write_filepath = strdup(path);
+            }
+            break;
+        case GET:
+            if (sock->write_filename != NULL) {
+                file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(sock->write_filename) + 1;
+                char path[file_path_len];
+                sprintf(path, "%s%s", DEFAULT_CLIENT_PATH, sock->write_filename);
+                sock->write_filepath = strdup(path);
+            } else {
+                file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(sock->read_filename) + 1;
+                char path[file_path_len];
+                sprintf(path, "%s%s", DEFAULT_CLIENT_PATH, sock->read_filename);
+                sock->write_filepath = strdup(path);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 
 /**
  * @brief free the socket object and its members.

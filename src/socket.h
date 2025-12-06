@@ -51,9 +51,9 @@ void set_sock_command(socket_t* sock, commands command);
 
 void print_read_file_info(socket_t* sock);
 
-void set_sock_read_filepath(socket_t* sock, const char* read_filepath);
+void set_sock_read_filepath(socket_t* sock);
 
-void set_sock_write_filepath(socket_t* sock, const char* write_filepath);
+void set_sock_write_filepath(socket_t* sock);
 
 void free_socket(socket_t* sock);
 

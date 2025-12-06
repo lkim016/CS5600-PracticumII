@@ -9,6 +9,10 @@
 #include "utils.h"
 
 void split_read_path(const char *path, socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
     // Find the last occurrence of the directory separator
     const char *last_sep = strrchr(path, PATH_DELIMITER);
     
@@ -75,12 +79,16 @@ void split_read_path(const char *path, socket_t* sock) {
 
 
 void split_write_path(const char *path, socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
     // Find the last occurrence of the directory separator
     const char *last_sep = strrchr(path, PATH_DELIMITER);
-    
+    size_t dir_len = 0;
     if (last_sep != NULL) {
         // Copy the directory part
-        size_t dir_len = last_sep - path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
+        dir_len = last_sep - path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
         sock->write_pdir = (char*)calloc(dir_len + 1, sizeof(char));  // Allocate memory for the directory part, including the null terminator
         if (sock->write_pdir == NULL) {
             // Handle memory allocation failure if needed
@@ -100,7 +108,7 @@ void split_write_path(const char *path, socket_t* sock) {
 
     } else {
         // If no directory separator is found, the whole path is the filename
-        size_t dir_len = strlen(path);  // Directory length will be the full length of the path
+        dir_len = strlen(path);  // Directory length will be the full length of the path
         sock->write_pdir = (char*)calloc(1, sizeof(char));  // Allocate memory for an empty string (no directory part)
         if (sock->write_pdir == NULL) {
             perror("calloc failed for write_pdir (no separator)");
