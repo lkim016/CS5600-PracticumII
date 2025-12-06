@@ -21,7 +21,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-int folder_not_exists_make(const char* folder_path);
 
 /**
  * @brief depending on the command, a TCP socket is sending a message to the other TCP socket either client or message.

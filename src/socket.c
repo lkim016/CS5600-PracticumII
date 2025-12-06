@@ -52,6 +52,7 @@ void set_sock_command(socket_t* sock, commands command) {
     }
 
     sock->command = command;
+    return;
 }
 
 
@@ -61,6 +62,7 @@ void print_read_file_info(socket_t* sock) {
         return;
     }
     printf("Parent Dir: %s, Filename: %s, File Ext: %s\n", sock->read_dirs, sock->read_filename, sock->read_file_ext);
+    return;
 }
 
 void print_write_file_info(socket_t* sock) {
@@ -69,6 +71,7 @@ void print_write_file_info(socket_t* sock) {
         return;
     }
     printf("Parent Dir: %s, Filename: %s, File Ext: %s\n", sock->write_dirs, sock->write_filename, sock->write_file_ext);
+    return;
 }
 
 /*
@@ -94,6 +97,7 @@ void set_sock_read_filepath(socket_t* sock) {
         sprintf(path, "%s", sock->read_filename);
         sock->read_filepath = strdup(path);
     }
+    return;
 }
 
 
@@ -134,6 +138,7 @@ void set_sock_write_filepath(socket_t* sock) {
         default:
             break;
     }
+    return;
 }
 
 
@@ -152,6 +157,7 @@ void set_read_file_ext(socket_t* sock) {
         sock->read_file_ext = strdup(last_dot + 1);  // Copy the extension into read_file_ext (without the period)
         return;
     }
+    return;
 }
 
 
@@ -170,6 +176,7 @@ void set_write_file_ext(socket_t* sock) {
         sock->write_file_ext = strdup(last_dot + 1);  // Copy the extension into write_file_ext (without the period)
         return;
     }
+    return;
 }
 
 
@@ -213,7 +220,7 @@ void set_read_fileInfo(const char *path, socket_t* sock) {
         strcpy(sock->read_filename, path);  // Copy the whole path into read_filename
         return;
     }
-
+    return;
 }
 
 
@@ -257,6 +264,7 @@ void set_write_fileInfo(const char *path, socket_t* sock) {
         strcpy(sock->write_filename, path);  // Copy the whole path into write_filename
         return;
     }
+    return;
 }
 
 
