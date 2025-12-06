@@ -98,7 +98,6 @@ void send_file(socket_t* sock, int sock_fd) {
     }
     
     fclose(file);
-    printf("File sent successfully!\n");
 }
 
 
@@ -171,6 +170,5 @@ void rcv_file(socket_t* sock, int sock_fd) {
     }
 
     fclose(out_file);
-    printf("File received successfully!\n");
 }
 
