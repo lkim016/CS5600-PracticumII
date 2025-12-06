@@ -222,14 +222,6 @@ void set_write_fileInfo(const char *path, socket_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         exit(1);
     }
-
-    if (path == NULL) { // if write path is omitted then use read filename
-        size_t fn_len = strlen(sock->read_filename);  // Directory length will be the full length of the path
-        char path[fn_len]; // ex: data/file.txt
-        sprintf(path, "%s", sock->read_filename);
-        sock->write_filename = strdup(path); // Copy the whole path into write_filename
-        return;
-    }
     // Find the last occurrence of the directory separator
     const char *last_slash = strrchr(path, PATH_DELIMITER);
     size_t dir_len = 0;

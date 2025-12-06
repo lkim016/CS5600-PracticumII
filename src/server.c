@@ -120,6 +120,7 @@ int main(void) {
     }
     printf("Msg from client: %s\n", client_message);
 
+    const char* first_path = NULL;
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
@@ -131,6 +132,7 @@ int main(void) {
         set_read_fileInfo(token, server_sck);
         set_read_file_ext(server_sck);
         set_sock_read_filepath(server_sck);
+        first_path = token;
       } else if (token_count == 2) {
         set_write_fileInfo(token, server_sck);
         set_write_file_ext(server_sck);
@@ -138,6 +140,12 @@ int main(void) {
       }
       token_count++;
       token = strtok(NULL, DELIMITER);
+    }
+
+    if (server_sck->write_filename == NULL) { // if 3 command is omitted
+      set_write_fileInfo(first_path, server_sck);
+      set_write_file_ext(server_sck);
+      set_sock_write_filepath(server_sck);
     }
 
     printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
