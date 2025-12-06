@@ -29,6 +29,7 @@ void server_cmd_handles(socket_t* sock) {
     case STOP:
       msg = "Exiting Server...\n";
       send_msg(sock->client_sock_fd, msg);
+      printf("%s", msg);
       free_socket(sock);
       exit(0);
       break;
