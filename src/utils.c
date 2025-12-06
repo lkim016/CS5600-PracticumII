@@ -123,7 +123,7 @@ void send_file(socket_t* sock, int sock_fd) {
     // send the file size
     uint32_t size = htonl(file_size);
     if (send(sock_fd, &size, sizeof(size), 0) < 0) {
-        perror("Error sending file size");
+        perror("Error sending file size\n");
         fclose(file);
         free_socket(sock);
         exit(1);
@@ -132,7 +132,7 @@ void send_file(socket_t* sock, int sock_fd) {
     // Wait for acknowledgment from the server before sending file data
     char *ack = NULL;
     if (recv(sock_fd, ack, 1, 0) <= 0) {
-        perror("Error receiving acknowledgment from server");
+        perror("Error receiving acknowledgment from server\n");
         fclose(file);
         return;
     }
@@ -156,7 +156,7 @@ void send_file(socket_t* sock, int sock_fd) {
                 exit(1);
             }
 
-            printf("Bytes Sent: %lu", sent);
+            printf("Bytes Sent: %lu\n", sent);
 
             total_sent += sent;
             }
@@ -164,7 +164,7 @@ void send_file(socket_t* sock, int sock_fd) {
     }
     
     if (recv(sock_fd, ack, 1, 0) <= 0) {
-        perror("Error receiving acknowledgment from server");
+        perror("Error receiving acknowledgment from server\n");
         fclose(file);
         return;
     }
@@ -208,7 +208,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
     }
 
     if (send(sock_fd, &ack, 1, 0) < 0) {
-        perror("Error sending acknowledgment");
+        perror("Error sending acknowledgment\n");
         return -1;
     }
 
@@ -238,7 +238,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         // Write the received data to the file
         size_t written = fwrite(buffer, 1, received, out_file);
         if (written != received) {
-            perror("Error writing to file");
+            perror("Error writing to file\n");
             fclose(out_file);
             return -1;
         }
@@ -259,7 +259,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
     // Final acknowledgment after receiving all data
     ack = "Y";
     if (send(sock_fd, &ack, 1, 0) < 0) {
-        perror("Error sending final acknowledgment");
+        perror("Error sending final acknowledgment\n");
         return -1;
     }
 

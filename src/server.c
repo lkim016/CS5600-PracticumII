@@ -31,13 +31,6 @@ void server_cmd_handles(socket_t* sock) {
 
   char* msg = NULL;
   switch(sock->command) {
-    case STOP:
-      msg = "Exiting Server...\n";
-      send_msg(sock->client_sock_fd, msg);
-      printf("%s", msg);
-      free_socket(sock);
-      exit(0);
-      break;
     case WRITE:
       if (folder_not_exists_make(sock->write_dirs) == 1) {
           if (rcv_file(sock, sock->server_sock_fd) < 0 ) {
@@ -57,6 +50,13 @@ void server_cmd_handles(socket_t* sock) {
     case GET:
       // send the file to server
       send_file(sock, sock->server_sock_fd);
+      break;
+    case STOP:
+      msg = "Exiting Server...\n";
+      send_msg(sock->client_sock_fd, msg);
+      printf("%s", msg);
+      free_socket(sock);
+      exit(0);
       break;
     default:
       printf("Unknown command\n");

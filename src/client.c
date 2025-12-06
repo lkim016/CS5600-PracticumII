@@ -31,18 +31,6 @@ void client_cmd_handles(socket_t* sock) {
   // handle different commands
   const char* msg = NULL;
   switch (sock->command) {
-    case STOP:
-      char server_message[MSG_SIZE];
-      // Clean buffers:
-      memset(server_message,'\0',sizeof(server_message));
-      // Receive the server's response:
-      if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
-        printf("Error while receiving server's msg\n");
-        return;
-      }
-      
-      printf("Server's response: %s\n",server_message);
-      break;
     case WRITE:
       // send the file to server
       send_file(sock, sock->client_sock_fd);
@@ -62,6 +50,18 @@ void client_cmd_handles(socket_t* sock) {
           printf("Failed to send message\n");
       }
     */
+      break;
+    case STOP:
+      char server_message[MSG_SIZE];
+      // Clean buffers:
+      memset(server_message,'\0',sizeof(server_message));
+      // Receive the server's response:
+      if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+        printf("Error while receiving server's msg\n");
+        return;
+      }
+      
+      printf("Server's response: %s\n",server_message);
       break;
     default:
       printf("Unknown command\n");
