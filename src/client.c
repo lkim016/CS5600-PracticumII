@@ -36,8 +36,6 @@ void client_cmd_handles(socket_t* sock) {
       send_file(sock, sock->client_sock_fd);
       break;
     case GET:
-      
-      send_msg(sock->server_sock_fd, msg);
 
       if (folder_not_exists_make(sock->write_dirs) == 1) {
           if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
@@ -49,7 +47,7 @@ void client_cmd_handles(socket_t* sock) {
           msg = "Warning: File was not received - issues with folder path to write out to\n";
         }
 
-        if (send_msg(sock->client_sock_fd, msg) < 0) {
+        if (send_msg(sock->server_sock_fd, msg) < 0) {
             perror("Failed to send response to server");
         }
     case RM:
