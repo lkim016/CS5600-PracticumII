@@ -26,14 +26,14 @@ typedef struct socket_data {
     int client_sock_fd; // file descriptor for the client socket
     int server_sock_fd; // file descriptor for the server socket
     commands command; // execution commands from the program CLI args
-    char *read_dirs; // parent dir of the file being read
-    char *read_filename; // filename of the file being read
-    char *read_filepath; // filepath of the file being read
-    char *read_file_ext; // file extension of the file being read
-    char *write_dirs; // parent dir of the file being written
-    char *write_filename; // filename of the file being written
-    char *write_filepath; // filepath of the file being written
-    char *write_file_ext; // file extension of the file being written
+    char *first_dirs; // parent dir of the file being read
+    char *first_filename; // filename of the file being read
+    char *first_filepath; // filepath of the file being read
+    char *first_file_ext; // file extension of the file being read
+    char *sec_dirs; // parent dir of the file being written
+    char *sec_filename; // filename of the file being written
+    char *sec_filepath; // filepath of the file being written
+    char *sec_file_ext; // file extension of the file being written
 } socket_t;
 
 /**
@@ -86,28 +86,28 @@ void print_write_file_info(socket_t* sock);
  *
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_sock_read_filepath(socket_t* sock);
+void set_sock_first_filepath(socket_t* sock);
 
 /**
  * @brief initializes the socket metadata object write file's filepath member.
  *
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_sock_write_filepath(socket_t* sock);
+void set_sock_sec_filepath(socket_t* sock);
 
 /**
  * @brief sets the file extension from the read filename.
  *
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_read_file_ext(socket_t* sock);
+void set_first_file_ext(socket_t* sock);
 
 /**
  * @brief sets the file extension from the write filename.
  *
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_write_file_ext(socket_t* sock);
+void set_sec_file_ext(socket_t* sock);
 
 /**
  * @brief splits and sets the provided path into filename and folder directories for the read file info members of the socket metadata object.
@@ -115,7 +115,7 @@ void set_write_file_ext(socket_t* sock);
  * @param path const char * - path input from the CLI args
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_read_fileInfo(const char *path, socket_t* sock);
+void set_first_fileInfo(const char *path, socket_t* sock);
 
 /**
  * @brief splits and sets the provided path into filename and folder directories for the write file info members of the socket metadata object.
@@ -123,7 +123,7 @@ void set_read_fileInfo(const char *path, socket_t* sock);
  * @param path const char * - path input from the CLI args
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_write_fileInfo(const char *path, socket_t* sock);
+void set_sec_fileInfo(const char *path, socket_t* sock);
 
 /**
  * @brief free the socket metadata object and its members.

@@ -60,6 +60,11 @@ int folder_not_exists_make(const char* folder_path) {
     return 1;
 }
 
+/*
+int rm_folder() {
+
+}
+*/
 
 int send_msg(int sock_fd, const char* message) {
   // printf("%s\n", server_message); // check
@@ -78,7 +83,7 @@ void send_file(socket_t* sock, int sock_fd) {
         free_socket(sock);
         exit(1);
     }
-    if (sock->read_filepath == NULL) {
+    if (sock->first_filepath == NULL) {
         fprintf(stderr, "ERROR: read filename is NULL\n");
         free_socket(sock);
         exit(1);
@@ -91,7 +96,7 @@ void send_file(socket_t* sock, int sock_fd) {
     }
 
     // printf("Local File path: %s\n", file_path);
-    FILE *file = fopen(sock->read_filepath, "rb"); // "rb" for read binary
+    FILE *file = fopen(sock->first_filepath, "rb"); // "rb" for read binary
     if (file == NULL) {
         perror("Error opening read file\n");
         free_socket(sock);
@@ -163,7 +168,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         return -1;
     }
-    if (sock->write_filepath == NULL) {
+    if (sock->sec_filepath == NULL) {
         fprintf(stderr, "ERROR: write filename is NULL\n");
         return -1;
 
@@ -186,7 +191,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         return -1;
     }
 
-    FILE *out_file = fopen(sock->write_filepath, "wb");
+    FILE *out_file = fopen(sock->sec_filepath, "wb");
     if (out_file == NULL) {
         perror("Error opening write file\n");
         return -1;

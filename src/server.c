@@ -35,7 +35,7 @@ void server_cmd_handles(socket_t* sock) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-        if (folder_not_exists_make(sock->write_dirs) == 1) {
+        if (folder_not_exists_make(sock->sec_dirs) == 1) {
             if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
               msg = "Error receiving file\n";
             } else {
@@ -59,9 +59,15 @@ void server_cmd_handles(socket_t* sock) {
             return;
         }
         
-        printf("Client's response: %s\n",client_message);
+        printf("Client's response: %s\n", client_message);
         break;
     case RM:
+        // if command is RM then check if
+        /*
+        if (strcmp(sock->) != 0) {
+
+        }
+        */
         break;
     case STOP:
         msg = "Exiting Server...\n";
@@ -162,26 +168,26 @@ int main(void) {
         commands cmd = str_to_cmd_enum(token);
         set_sock_command(server_sck, cmd);
       } else if (token_count == 1) {
-        set_read_fileInfo(token, server_sck);
-        set_read_file_ext(server_sck);
-        set_sock_read_filepath(server_sck);
+        set_first_fileInfo(token, server_sck);
+        set_first_file_ext(server_sck);
+        set_sock_first_filepath(server_sck);
         first_path = token;
       } else if (token_count == 2) {
-        set_write_fileInfo(token, server_sck);
-        set_write_file_ext(server_sck);
-        set_sock_write_filepath(server_sck);
+        set_sec_fileInfo(token, server_sck);
+        set_sec_file_ext(server_sck);
+        set_sock_sec_filepath(server_sck);
       }
       token_count++;
       token = strtok(NULL, DELIMITER);
     }
 
-    if (server_sck->write_filename == NULL) { // if 3 command is omitted
-      set_write_fileInfo(first_path, server_sck);
-      set_write_file_ext(server_sck);
-      set_sock_write_filepath(server_sck);
+    if (server_sck->sec_filename == NULL) { // if 3 command is omitted
+      set_sec_fileInfo(first_path, server_sck);
+      set_sec_file_ext(server_sck);
+      set_sock_sec_filepath(server_sck);
     }
 
-    printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
+    printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->first_filepath, server_sck->sec_filepath);
       print_write_file_info(server_sck); // FIXME: maybe delete
 
     server_cmd_handles(server_sck);

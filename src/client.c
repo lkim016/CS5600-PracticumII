@@ -48,7 +48,7 @@ void client_cmd_handles(socket_t* sock) {
       break;
     case GET:
 
-      if (folder_not_exists_make(sock->write_dirs) == 1) {
+      if (folder_not_exists_make(sock->sec_dirs) == 1) {
           if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
             msg = "Error receiving file\n";
           } else {
@@ -58,11 +58,18 @@ void client_cmd_handles(socket_t* sock) {
           msg = "Warning: File was not received - issues with folder path to write out to\n";
         }
 
-        if (send_msg(sock->server_sock_fd, msg) < 0) {
+        if (send_msg(sock->client_sock_fd, msg) < 0) {
             perror("Failed to send response to server");
             return;
         }
     case RM:
+        // Wait for acknowledgment from the other socket before declaring success
+        if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+            perror("Error receiving acknowledgment from server");
+            return;
+        }
+
+        printf("Server's response: %s\n",server_message);
 
     /*
     } else if(strcmp(command,  "RM") == 0) {
@@ -148,19 +155,19 @@ int main(int argc, char* argv[]) {
   // set members of socket object
   set_sock_command(client_sck, str_to_cmd_enum(argv[1]));
 
-  if (argc > 2) { // set read_filepath
-      set_read_fileInfo(argv[2], client_sck);
-      set_read_file_ext(client_sck);
-      set_sock_read_filepath(client_sck);
+  if (argc > 2) { // set first_filepath
+      set_first_fileInfo(argv[2], client_sck);
+      set_first_file_ext(client_sck);
+      set_sock_first_filepath(client_sck);
   }
   
   if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-      set_write_fileInfo(argv[3], client_sck);
-      set_write_file_ext(client_sck);
-      set_sock_write_filepath(client_sck);
+      set_sec_fileInfo(argv[3], client_sck);
+      set_sec_file_ext(client_sck);
+      set_sock_sec_filepath(client_sck);
   }
 
-  print_read_file_info(client_sck); // FISME: mayeb delete
+  print_read_file_info(client_sck); // FIXME: mayeb delete
   //-----------
   // Declare client message - since its a stream will send as comma-delimited string
   char client_message[msg_size];
