@@ -36,14 +36,25 @@ void client_cmd_handles(socket_t* sock) {
       send_file(sock, sock->client_sock_fd);
       break;
     case GET:
-      rcv_file(sock, sock->client_sock_fd);
       
-      msg = "Client is processing...\n";
       send_msg(sock->server_sock_fd, msg);
 
+      if (folder_not_exists_make(sock->write_dirs) == 1) {
+          if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
+            msg = "Error receiving file\n";
+          } else {
+            msg = "Client is processing...\n";
+          }
+        } else {
+          msg = "Warning: File was not received - issues with folder path to write out to\n";
+        }
+
+        if (send_msg(sock->client_sock_fd, msg) < 0) {
+            perror("Failed to send response to server");
+        }
+    case RM:
+
     /*
-    } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
-      break;
     } else if(strcmp(command,  "RM") == 0) {
       // For GET and RM, no file data is sent
       if (send_message(socket, client_message, strlen(client_message), NULL, 0) < 0) {

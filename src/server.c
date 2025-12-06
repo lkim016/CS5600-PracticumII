@@ -25,42 +25,44 @@
  */
 void server_cmd_handles(socket_t* sock) {
   if (!sock) {
-      fprintf(stderr, "ERROR: Socket is NULL\n");
-      return;
+        fprintf(stderr, "ERROR: Socket is NULL\n");
+        return;
   }
 
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-      if (folder_not_exists_make(sock->write_dirs) == 1) {
-          if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
-            msg = "Error receiving file\n";
+        if (folder_not_exists_make(sock->write_dirs) == 1) {
+            if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
+              msg = "Error receiving file\n";
+            } else {
+              msg = "Server is processing...\n";
+            }
           } else {
-            msg = "Server is processing...\n";
+            msg = "Warning: File was not received - issues with folder path to write out to\n";
           }
-        } else {
-          msg = "Warning: File was not received - issues with folder path to write out to\n";
-        }
 
-        if (send_msg(sock->client_sock_fd, msg) < 0) {
-            perror("Failed to send response to client");
-        }
+          if (send_msg(sock->client_sock_fd, msg) < 0) {
+              perror("Failed to send response to client");
+          }
 
-      break;
+        break;
     case GET:
-      // send the file to server
-      send_file(sock, sock->client_sock_fd);
-      break;
+        // send the file to client
+        send_file(sock, sock->client_sock_fd);
+        break;
+    case RM:
+        break;
     case STOP:
-      msg = "Exiting Server...\n";
-      send_msg(sock->client_sock_fd, msg);
-      printf("%s", msg);
-      free_socket(sock);
-      exit(0);
-      break;
+        msg = "Exiting Server...\n";
+        send_msg(sock->client_sock_fd, msg);
+        printf("%s", msg);
+        free_socket(sock);
+        exit(0);
+        break;
     default:
-      printf("Unknown command\n");
-      break;
+        printf("Unknown command\n");
+        break;
   }
 }
 
