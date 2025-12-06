@@ -42,14 +42,14 @@ void server_cmd_handles(socket_t* sock) {
           msg = "Warning: File was not received - issues with folder path to write out to\n";
         }
 
-        if (send_msg(sock->server_sock_fd, msg) < 0) {
+        if (send_msg(sock->client_sock_fd, msg) < 0) {
             perror("Failed to send response to client");
         }
 
       break;
     case GET:
       // send the file to server
-      send_file(sock, sock->server_sock_fd);
+      send_file(sock, sock->client_sock_fd);
       break;
     case STOP:
       msg = "Exiting Server...\n";
