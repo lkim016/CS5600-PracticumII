@@ -5,6 +5,8 @@ server
 file2.txt
 
 // client side
+run_fixed.sh
+run.sh
 rfs
 data/
 original/
