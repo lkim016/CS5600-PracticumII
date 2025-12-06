@@ -129,56 +129,32 @@ void send_file(socket_t* sock, int sock_fd) {
         exit(1);
     }
 
-    // Wait for acknowledgment from the server before sending file data
-    char ack[1];
-    // Clean buffer:
-    memset(ack,'\0',sizeof(ack));
-    if (recv(sock_fd, ack, 1, 0) < 0) {
-        perror("Error receiving acknowledgment from server\n");
-        fclose(file);
-        return;
-    }
-    printf("%s\n", ack);
-    if (strcmp(ack, "Y") == 0) {
-        // send the file data
-        char buffer[CHUNK_SIZE]; // buffer to hold file chunks
-        size_t bytes_read;
-        while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
-        size_t total_sent = 0;
+    // send the file data
+    char buffer[CHUNK_SIZE]; // buffer to hold file chunks
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
+    size_t total_sent = 0;
 
-        while (total_sent < bytes_read) {
-            ssize_t sent = send(sock_fd, buffer + total_sent,
-                                bytes_read - total_sent, 0);
+    while (total_sent < bytes_read) {
+        ssize_t sent = send(sock_fd, buffer + total_sent,
+                            bytes_read - total_sent, 0);
 
-            if (sent < 0) {
-                perror("Unable to send message\n");
-                // handle error (disconnect, etc.)
-                fclose(file);
-                free_socket(sock);
-                exit(1);
-            }
+        if (sent < 0) {
+            perror("Unable to send message\n");
+            // handle error (disconnect, etc.)
+            fclose(file);
+            free_socket(sock);
+            exit(1);
+        }
 
-            printf("Bytes Sent: %lu\n", sent);
+        printf("Bytes Sent: %lu\n", sent);
 
-            total_sent += sent;
-            }
+        total_sent += sent;
         }
     }
 
-    // Clean buffer:
-    memset(ack,'\0',sizeof(ack));
-    if (recv(sock_fd, ack, 1, 0) < 0) {
-        perror("Error receiving acknowledgment from server\n");
-        fclose(file);
-        return;
-    }
-
     fclose(file);
-    if (strcmp(ack, "Y")) {
-        printf("File sent successfully!\n");
-    } else {
-        printf("File was not sent successfully.\n");
-    }
+    printf("File sent successfully!\n");
 }
 
 
@@ -205,15 +181,8 @@ int rcv_file(socket_t* sock, int sock_fd) {
     size = ntohl(size);
     printf("File Size: %u\n", size);
 
-    // Send acknowledgment to client
-    char ack = 'Y';
     if (size == 0) {
         printf("Received file size is 0. No file to receive.\n");
-        ack = 'N';
-    }
-
-    if (send(sock->server_sock_fd, &ack, 1, 0) < 0) {
-        perror("Error sending acknowledgment\n");
         return -1;
     }
 
@@ -259,13 +228,6 @@ int rcv_file(socket_t* sock, int sock_fd) {
 
         // Optionally print progress (to debug or monitor)
         printf("Received %u/%u bytes\n", total_received, size);
-    }
-
-    // Final acknowledgment after receiving all data
-    ack = 'Y';
-    if (send(sock->server_sock_fd, &ack, 1, 0) < 0) {
-        perror("Error sending final acknowledgment\n");
-        return -1;
     }
 
     fclose(out_file);
