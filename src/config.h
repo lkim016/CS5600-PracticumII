@@ -17,7 +17,7 @@
     #define PATH_DELIMITER '/'
 #endif
 
-#define DEFAULT_CLIENT_PATH "data/"
+// #define DEFAULT_CLIENT_PATH "data/"
 #define DEFAULT_CLIENT_FILENAME "file.txt"
 #define DEFAULT_SERVER_PATH "server_data/"
 #define DEFAULT_SERVER_FILENAME "file.txt"

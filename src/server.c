@@ -128,10 +128,12 @@ int main(void) {
         commands cmd = str_to_cmd_enum(token);
         set_sock_command(server_sck, cmd);
       } else if (token_count == 1) {
-        split_read_path(token, server_sck);
+        set_write_fileInfo(token, server_sck);
+        set_read_file_ext(server_sck);
         set_sock_read_filepath(server_sck);
       } else if (token_count == 2) {
-        split_write_path(token, server_sck);
+        set_write_fileInfo(token, server_sck);
+        set_write_file_ext(server_sck);
         set_sock_write_filepath(server_sck);
       }
       token_count++;
