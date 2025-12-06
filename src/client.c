@@ -26,17 +26,20 @@
 void client_cmd_handles(socket_t* sock) {
 
   // handle different commands
-  char* msg = NULL;
+  const char* msg = NULL;
   switch (sock->command) {
     case STOP:
+      char server_message[MSG_SIZE];
+      // Clean buffers:
+      memset(server_message,'\0',sizeof(server_message));
       // Receive the server's response:
-      if(recv(sock->client_sock_fd, msg, sizeof(msg), 0) < 0) {
+      if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
         printf("Error while receiving server's msg\n");
         free_socket(sock);
         return exit(1);
       }
       
-      printf("Server's response: %s\n", msg);
+      printf("Server's response: %s\n",server_message);
       exit(0);
       break;
     case WRITE:
