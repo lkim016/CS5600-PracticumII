@@ -2,7 +2,7 @@
  * @file client.c / source file for TCP Socket Client.
  * @authors Lori Kim / CS5600 / Northeastern University
  * 
- * @date Nov 11, 2025 / Fall 2025
+ * @date Dec 5, 2025 / Fall 2025
  * adapted from: 
  *   https://www.educative.io/answers/how-to-implement-tcp-sockets-in-c
  */

@@ -2,7 +2,7 @@
  * @file socket.c / source code for Socket.
  * @authors Lori Kim / CS5600 / Northeastern University
  * @brief
- * @date Nov 11, 2025 / Fall 2025
+ * @date Dec 5, 2025 / Fall 2025
  *
 */
 
@@ -179,7 +179,7 @@ void set_read_fileInfo(const char *path, socket_t* sock) {
         exit(1);
     }
     // Find the last occurrence of the directory separator
-    const char *last_slash = strrchr(path, PATH_DELIMITER);
+    const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
     size_t dir_len = 0;
     if (last_slash != NULL) {
         // Copy the directory part
@@ -223,7 +223,7 @@ void set_write_fileInfo(const char *path, socket_t* sock) {
         exit(1);
     }
     // Find the last occurrence of the directory separator
-    const char *last_slash = strrchr(path, PATH_DELIMITER);
+    const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
     size_t dir_len = 0;
     if (last_slash != NULL) {
         // Copy the directory part

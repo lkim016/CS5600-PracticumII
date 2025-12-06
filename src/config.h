@@ -5,16 +5,27 @@
 #define CHUNK_SIZE 4096
 
 // port number
+
 #define PORT 8080
 // server address
 #define SERVER_IP "192.168.45.67"
 
+/*
+#define PORT 5000
+#define SERVER_IP "127.0.0.1"
+*/
 #define DELIMITER ","
 
 #ifdef _WIN32
-    #define PATH_DELIMITER '\\'
+    #define PATH_DELIMITER "\\"
 #else
-    #define PATH_DELIMITER '/'
+    #define PATH_DELIMITER "/"
+#endif
+
+#ifdef _WIN32
+    #define SINGLE_PATH_DELIMITER '\\'
+#else
+    #define SINGLE_PATH_DELIMITER '/'
 #endif
 
 // #define DEFAULT_CLIENT_PATH "data/"

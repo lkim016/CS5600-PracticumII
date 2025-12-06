@@ -2,7 +2,7 @@
  * @file utils.h / header file for program utilities.
  * @authors Lori Kim / CS5600 / Northeastern University
  * 
- * @date Nov 11, 2025 / Fall 2025
+ * @date Dec 5, 2025 / Fall 2025
  *
  */
 
@@ -12,12 +12,16 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "config.h"
 #include "socket.h"
 
 #ifndef UTILS_H
 #define UTILS_H
+
+int folder_not_exists_make(const char* folder_path);
 
 /**
  * @brief depending on the command, a TCP socket is sending a message to the other TCP socket either client or message.

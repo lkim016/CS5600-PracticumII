@@ -2,11 +2,63 @@
  * @file utils.c / source code for program utilities.
  * @authors Lori Kim / CS5600 / Northeastern University
  * @brief
- * @date Nov 11, 2025 / Fall 2025
+ * @date Dec 5, 2025 / Fall 2025
  *
 */
 
 #include "utils.h"
+
+int folder_not_exists_make(const char* folder_path) {
+    if (folder_path == NULL) {
+        printf("Invalid path!\n");
+        return -1; // Invalid path
+    }
+    // loop through folder_path with strtok
+    int token_count = 0;
+    char* path = (char*)calloc(1, sizeof(char));
+    if (path == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
+    path[0] = '\0';
+    
+    char* token = strtok(strdup(folder_path), "/");
+    while (token != NULL) {
+        // Concatenate the token to the current path
+        size_t new_size = strlen(path) + strlen(token) + 2; // +2 for '/' and '\0'
+        char* temp = realloc(path, new_size);
+        if (temp == NULL) {
+            printf("Memory reallocation failed!\n");
+            free(path);
+            return -1;
+        }
+        path = temp;
+
+        // Add the token to the path
+        strcat(path, token);
+        printf("Checking path: %s\n", path);
+
+        // Try to open the directory
+        DIR *dir = opendir(path);
+        // If opendir returns NULL, the directory doesn't exist
+        if (dir) {
+            // Directory exists, so close the directory and return true
+            closedir(dir);
+        } else {
+            // Directory doesn't exist, create it
+            if (mkdir(path, 0755) != 0) {
+                printf("Failed to create directory: %s\n", path);
+                free(path);
+                return -1;
+            }
+        }
+        
+        token = strtok(NULL, "/");
+    }
+
+    free(path);
+    return 1;
+}
 
 
 void send_msg(int sock_fd, const char* message) {
@@ -17,11 +69,6 @@ void send_msg(int sock_fd, const char* message) {
   }
 }
 
-/*
-bool check_folder_exists(const char* path) {
-
-}
-*/
 
 void send_file(socket_t* sock, int sock_fd) {
     if (sock == NULL) {

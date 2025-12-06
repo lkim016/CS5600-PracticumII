@@ -2,7 +2,7 @@
  * @file socket.h / header file for socket.
  * @authors Lori Kim / CS5600 / Northeastern University
  * 
- * @date Nov 11, 2025 / Fall 2025
+ * @date Dec 5, 2025 / Fall 2025
  *
  */
 
@@ -110,7 +110,7 @@ void set_read_file_ext(socket_t* sock);
 void set_write_file_ext(socket_t* sock);
 
 /**
- * @brief splits the provided path into filename and parent directory for the read file.
+ * @brief splits and sets the provided path into filename and folder directories for the read file info members of the socket metadata object.
  *
  * @param path const char * - path input from the CLI args
  * @param socket socket_t* - the pointer to the socket metadata object
@@ -118,7 +118,7 @@ void set_write_file_ext(socket_t* sock);
 void set_read_fileInfo(const char *path, socket_t* sock);
 
 /**
- * @brief splits the provided path into filename and parent directory for the write file.
+ * @brief splits and sets the provided path into filename and folder directories for the write file info members of the socket metadata object.
  *
  * @param path const char * - path input from the CLI args
  * @param socket socket_t* - the pointer to the socket metadata object
