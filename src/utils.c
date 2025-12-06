@@ -138,7 +138,7 @@ void send_file(socket_t* sock, int sock_fd) {
         fclose(file);
         return;
     }
-    printf("%d\n", strcmp(ack, "Y"));
+    printf("%s\n", ack);
     if (strcmp(ack, "Y") == 0) {
         // send the file data
         char buffer[CHUNK_SIZE]; // buffer to hold file chunks
@@ -206,10 +206,10 @@ int rcv_file(socket_t* sock, int sock_fd) {
     printf("File Size: %u\n", size);
 
     // Send acknowledgment to client
-    char *ack = "Y";
+    char ack = 'Y';
     if (size == 0) {
-        fprintf(stderr, "Received file size is 0. No file to receive.\n");
-        ack = "N";
+        printf("Received file size is 0. No file to receive.\n");
+        ack = 'N';
     }
 
     if (send(sock->server_sock_fd, &ack, 1, 0) < 0) {
@@ -262,7 +262,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
     }
 
     // Final acknowledgment after receiving all data
-    ack = "Y";
+    ack = 'Y';
     if (send(sock->server_sock_fd, &ack, 1, 0) < 0) {
         perror("Error sending final acknowledgment\n");
         return -1;
