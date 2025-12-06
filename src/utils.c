@@ -124,7 +124,15 @@ int rm_file_or_folder(socket_t* sock) {
         printf("File '%s' exists\n", filename);
         fclose(file);  // Close the file after checking
 
-        mode_t mode = 0666;
+        mode_t mode = 0755; // Full permissions for the owner, read and execute for others.
+        // Set the directory permissions
+        if (chmod(path, mode) == 0) {
+            printf("Directory permissions changed to '%o'.\n", mode);
+        } else {
+            perror("Error changing directory permissions");
+            return -1;
+        }
+
         if(chmod(filepath, mode) == 0) {
             printf("Permissions set to '%o' for '%s'\n", mode, filename);
             // Remove the file
