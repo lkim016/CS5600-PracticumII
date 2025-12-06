@@ -60,7 +60,15 @@ void print_read_file_info(socket_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL");
         return;
     }
-    printf("Parent Dir: %s, Filename: %s\n", sock->read_pdir, sock->read_filename);
+    printf("Parent Dir: %s, Filename: %s, File Ext: %s\n", sock->read_pdir, sock->read_filename, sock->read_file_ext);
+}
+
+void print_write_file_info(socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        return;
+    }
+    printf("Parent Dir: %s, Filename: %s, File Ext: %s\n", sock->write_pdir, sock->write_filename, sock->write_file_ext);
 }
 
 /*

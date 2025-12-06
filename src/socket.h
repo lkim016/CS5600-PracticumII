@@ -78,6 +78,13 @@ void set_sock_command(socket_t* sock, commands command);
 void print_read_file_info(socket_t* sock);
 
 /**
+ * @brief prints out the socket metadata object write file info.
+ *
+ * @param socket socket_t* - the pointer to the socket metadata object
+ */
+void print_write_file_info(socket_t* sock);
+
+/**
  * @brief initializes the socket metadata object read file's filepath member.
  *
  * @param socket socket_t* - the pointer to the socket metadata object

@@ -41,7 +41,7 @@ void split_read_path(const char *path, socket_t* sock) {
         // Separate out the extension from the filename
         last_dot = strrchr(sock->read_filename, '.');  // Find the last period in the filename
         if (last_dot != NULL) {
-            ext_len = last_dot - path + 1;  // pointer arithmetic calculating the length of the file ext part of the filename
+            ext_len = last_dot - sock->read_filename + 1;  // pointer arithmetic calculating the length of the file ext part of the filename
             sock->read_file_ext = (char*)calloc(ext_len + 1, sizeof(char));  // Allocate memory for the directory part, including the null terminator
             if (sock->read_file_ext == NULL) {
                 perror("calloc failed for read_file_ext");
@@ -115,7 +115,7 @@ void split_write_path(const char *path, socket_t* sock) {
         // Separate out the extension from the filename
         last_dot = strrchr(sock->write_filename, '.');  // Find the last period in the filename
         if (last_dot != NULL) {
-            ext_len = last_dot - path + 1;  // pointer arithmetic calculating the length of the file ext part of the filename
+            ext_len = last_dot - sock->write_filename + 1;  // pointer arithmetic calculating the length of the file ext part of the filename
             sock->write_file_ext = (char*)calloc(ext_len + 1, sizeof(char));  // Allocate memory for the directory part, including the null terminator
             if (sock->write_file_ext == NULL) {
                 perror("calloc failed for write_file_ext");
