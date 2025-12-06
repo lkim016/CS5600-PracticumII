@@ -9,8 +9,19 @@
 #include "utils.h"
 
 
-int folder_not_exists_make(const char* folder_path) {
-    if (folder_path == NULL) {
+int folder_not_exists_make(const char* file_path) {
+    // Find the last occurrence of the directory separator - Copy the directory part
+    const char *last_slash = strrchr(file_path, SINGLE_PATH_DELIMITER);
+    size_t dir_len = last_slash - file_path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
+    char* dirs = (char*)calloc(dir_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
+    if (dirs == NULL) {
+        // Handle memory allocation failure if needed
+        perror("calloc failed for first_dirs\n");
+        return -1;
+    }
+    strncpy(dirs, file_path, dir_len);  // Copy the directory part into first_dirs
+    
+    if (file_path == NULL) {
         printf("Invalid path!\n");
         return -1; // Invalid path
     }
@@ -22,7 +33,7 @@ int folder_not_exists_make(const char* folder_path) {
     }
     path[0] = '\0';
     
-    char* token = strtok(strdup(folder_path), "/");
+    char* token = strtok(strdup(dirs), "/");
     while (token != NULL) {
         // Concatenate the token to the current path
         size_t new_size = strlen(path) + strlen(token) + 2; // +2 for '/' and '\0'
@@ -56,12 +67,13 @@ int folder_not_exists_make(const char* folder_path) {
         token = strtok(NULL, "/");
     }
 
+    free(dirs);
     free(path);
     return 1;
 }
 
 /*
-int rm_folder() {
+int rm_folder(const char* folder_path) {
 
 }
 */

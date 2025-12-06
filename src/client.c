@@ -48,7 +48,7 @@ void client_cmd_handles(socket_t* sock) {
       break;
     case GET:
 
-      if (folder_not_exists_make(sock->sec_dirs) == 1) {
+      if (folder_not_exists_make(sock->sec_filepath) == 1) {
           if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
             msg = "Error receiving file\n";
           } else {

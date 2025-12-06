@@ -35,7 +35,7 @@ void server_cmd_handles(socket_t* sock) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-        if (folder_not_exists_make(sock->sec_dirs) == 1) {
+        if (folder_not_exists_make(sock->sec_filepath) == 1) {
             if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
               msg = "Error receiving file\n";
             } else {
@@ -63,11 +63,9 @@ void server_cmd_handles(socket_t* sock) {
         break;
     case RM:
         // if command is RM then check if
-        /*
-        if (strcmp(sock->) != 0) {
+        if (strcmp(sock->first_dirs, DEFAULT_SERVER_DIR) != 0) {
 
         }
-        */
         break;
     case STOP:
         msg = "Exiting Server...\n";
