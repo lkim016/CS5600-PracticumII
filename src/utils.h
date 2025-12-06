@@ -35,7 +35,7 @@ int folder_not_exists_make(const char* folder_path);
  * @param sock_fd int - the socket file descriptor that the file data will be sent to
  * @param message const char* - a constant char string that is the message
  */
-void send_msg(int sock_fd, const char* message);
+int send_msg(int sock_fd, const char* message);
 
 /**
  * @brief depending on the command, a TCP socket is being asked to read a file from its local env and then send it to the other TCP socket either client or message.
@@ -51,6 +51,6 @@ void send_file(socket_t* sock, int sock_fd);
  * @param socket socket_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be received by
  */
-void rcv_file(socket_t* sock, int sock_fd);
+int rcv_file(socket_t* sock, int sock_fd);
 
 #endif

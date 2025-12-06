@@ -24,6 +24,11 @@
  * @param socket socket_t* - the pointer to the server socket metadata object
  */
 void server_cmd_handles(socket_t* sock) {
+  if (!sock) {
+      fprintf(stderr, "ERROR: Socket is NULL\n");
+      return;
+  }
+
   char* msg = NULL;
   switch(sock->command) {
     case STOP:
@@ -35,13 +40,18 @@ void server_cmd_handles(socket_t* sock) {
       break;
     case WRITE:
       if (folder_not_exists_make(sock->write_dirs) == 1) {
-          rcv_file(sock, sock->server_sock_fd);
-          msg = "Server is processing...\n";
-      } else {
+          if(rcv_file(sock, sock->server_sock_fd) < 0 ) {
+            msg = "Error receiving file\n";
+          } else {
+            msg = "Server is processing...\n";
+          }
+        } else {
           msg = "Warning: File was not received - issues with folder path to write out to\n";
-      }
+        }
 
-      send_msg(sock->client_sock_fd, msg);
+        if (send_msg(sock->client_sock_fd, msg) < 0) {
+            perror("Failed to send response to client");
+        }
 
       break;
     case GET:
@@ -49,6 +59,7 @@ void server_cmd_handles(socket_t* sock) {
       send_file(sock, sock->server_sock_fd);
       break;
     default:
+      printf("Unknown command\n");
       break;
   }
 }
@@ -61,6 +72,10 @@ void server_cmd_handles(socket_t* sock) {
 int main(void) {
   // int socket_desc, client_sock;
   socket_t* server_sck = create_socket();
+  if (!server_sck) {
+      printf("Failed to set socket metadata\n");
+      return -1;
+  }
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
   
@@ -69,6 +84,7 @@ int main(void) {
   
   if(server_sck->server_sock_fd < 0){
     printf("Error while creating socket\n");
+    free_socket(server_sck);
     return -1;
   }
   printf("Socket created successfully\n");
@@ -81,6 +97,7 @@ int main(void) {
   // Bind to the set port and IP:
   if(bind(server_sck->server_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
     printf("Couldn't bind to the port\n");
+    free_socket(server_sck);
     return -1;
   }
   printf("Done with binding\n");
@@ -88,7 +105,7 @@ int main(void) {
   // Listen for clients:
   if(listen(server_sck->server_sock_fd, 1) < 0){
     printf("Error while listening\n");
-    close(server_sck->server_sock_fd);
+    free_socket(server_sck);
     return -1;
   }
   
@@ -118,9 +135,9 @@ int main(void) {
     // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
     if (recv(server_sck->client_sock_fd, client_message, 
             sizeof(client_message), 0) < 0){
-      printf("Couldn't receive\n");
-      free_socket(server_sck);
-      return -1;
+      printf("Failed to receive message from client\n");
+      close(server_sck->client_sock_fd);
+      continue;
     }
     printf("Msg from client: %s\n", client_message);
 
@@ -160,7 +177,8 @@ int main(void) {
     // Closing the socket:
     close(server_sck->client_sock_fd);
   }
-
+  
+  // Clean up server socket
   free_socket(server_sck);
     
   return 0;
