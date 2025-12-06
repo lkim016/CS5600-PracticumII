@@ -40,7 +40,7 @@ void server_cmd_handles(socket_t* sock) {
       break;
     case WRITE:
       if (folder_not_exists_make(sock->write_dirs) == 1) {
-          if(rcv_file(sock, sock->server_sock_fd) < 0 ) {
+          if (rcv_file(sock, sock->server_sock_fd) < 0 ) {
             msg = "Error receiving file\n";
           } else {
             msg = "Server is processing...\n";
@@ -177,7 +177,7 @@ int main(void) {
     // Closing the socket:
     close(server_sck->client_sock_fd);
   }
-  
+
   // Clean up server socket
   free_socket(server_sck);
     

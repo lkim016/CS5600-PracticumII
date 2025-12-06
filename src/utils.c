@@ -161,18 +161,15 @@ void send_file(socket_t* sock, int sock_fd) {
 int rcv_file(socket_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
-        free_socket(sock);
-        return -1;;
+        return -1;
     }
     if (sock->write_filepath == NULL) {
         fprintf(stderr, "ERROR: write filename is NULL\n");
-        free_socket(sock);
         return -1;
 
     }
     if (sock_fd < 0) {
         fprintf(stderr, "ERROR: socket file descriptor is invalid\n");
-        free_socket(sock);
         return -1;
     }
 
@@ -180,7 +177,6 @@ int rcv_file(socket_t* sock, int sock_fd) {
     ssize_t received_size = recv(sock_fd, &size, sizeof(size), 0);
     if (received_size <= 0) {
         perror("Error receiving file size\n");
-        free_socket(sock);
         return -1;
     }
     size = ntohl(size);
@@ -188,14 +184,12 @@ int rcv_file(socket_t* sock, int sock_fd) {
 
     if (size == 0) {
         fprintf(stderr, "Received file size is 0. No file to receive.\n");
-        free_socket(sock);
         return -1;
     }
 
     FILE *out_file = fopen(sock->write_filepath, "wb");
     if (out_file == NULL) {
         perror("Error opening write file\n");
-        free_socket(sock);
         return -1;
     }
 
@@ -232,7 +226,6 @@ int rcv_file(socket_t* sock, int sock_fd) {
         if (total_received > size) {
             fprintf(stderr, "Error: More data received than expected\n");
             fclose(out_file);
-            free_socket(sock);
             return -1;
         }
 
