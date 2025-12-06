@@ -29,6 +29,9 @@ void server_cmd_handles(socket_t* sock) {
         return;
   }
 
+  char client_message[MSG_SIZE];
+  // Clean buffers:
+  memset(client_message,'\0',sizeof(client_message));
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
@@ -36,7 +39,7 @@ void server_cmd_handles(socket_t* sock) {
             if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
               msg = "Error receiving file\n";
             } else {
-              msg = "Server is processing...\n";
+              msg = "File sent successfully!\n";
             }
           } else {
             msg = "Warning: File was not received - issues with folder path to write out to\n";
@@ -50,6 +53,13 @@ void server_cmd_handles(socket_t* sock) {
     case GET:
         // send the file to client
         send_file(sock, sock->client_sock_fd);
+        // Wait for acknowledgment from the other socket before declaring success
+        if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
+            perror("Error receiving acknowledgment from server");
+            return;
+        }
+        
+        printf("Client's response: %s\n",client_message);
         break;
     case RM:
         break;

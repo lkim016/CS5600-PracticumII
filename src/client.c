@@ -28,12 +28,23 @@ void client_cmd_handles(socket_t* sock) {
       fprintf(stderr, "ERROR: Socket is NULL\n");
       return;
   }
-  // handle different commands
+  
+  char server_message[MSG_SIZE];
+  // Clean buffers:
+  memset(server_message,'\0',sizeof(server_message));
   const char* msg = NULL;
+  // handle different commands
   switch (sock->command) {
     case WRITE:
       // send the file to server
       send_file(sock, sock->client_sock_fd);
+      // Wait for acknowledgment from the other socket before declaring success
+      if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+          perror("Error receiving acknowledgment from server");
+          return;
+      }
+
+      printf("Server's response: %s\n",server_message);
       break;
     case GET:
 
@@ -41,7 +52,7 @@ void client_cmd_handles(socket_t* sock) {
           if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
             msg = "Error receiving file\n";
           } else {
-            msg = "Client is processing...\n";
+            msg = "File sent successfully!\n";
           }
         } else {
           msg = "Warning: File was not received - issues with folder path to write out to\n";
@@ -49,6 +60,7 @@ void client_cmd_handles(socket_t* sock) {
 
         if (send_msg(sock->server_sock_fd, msg) < 0) {
             perror("Failed to send response to server");
+            return;
         }
     case RM:
 
@@ -61,9 +73,6 @@ void client_cmd_handles(socket_t* sock) {
     */
       break;
     case STOP:
-      char server_message[MSG_SIZE];
-      // Clean buffers:
-      memset(server_message,'\0',sizeof(server_message));
       // Receive the server's response:
       if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
         printf("Error while receiving server's msg\n");

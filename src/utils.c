@@ -154,7 +154,7 @@ void send_file(socket_t* sock, int sock_fd) {
     }
 
     fclose(file);
-    printf("File sent successfully!\n");
+    
 }
 
 
