@@ -166,6 +166,14 @@ void free_socket(socket_t* sock) {
     free(sock);
 }
 
+void send_msg(int sock_fd, const char* message) {
+  // printf("%s\n", server_message); // check
+  if (send(sock_fd, message, strlen(message), 0) < 0){
+    printf("Can't send message\n");
+    return;
+  }
+}
+
 void send_file(socket_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");

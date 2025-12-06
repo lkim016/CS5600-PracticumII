@@ -24,14 +24,20 @@
  * @param socket socket_t* - the pointer to the server socket metadata object
  */
 void server_cmd_handles(socket_t* sock) {
+  const char* msg = NULL;
   switch(sock->command) {
     case STOP:
-      printf("Exiting Server...\n");
+      msg = "Exiting Server...\n";
+      send_msg(sock->client_sock_fd, msg);
       free_socket(sock);
       exit(0);
       break;
     case WRITE:
       rcv_file(sock, sock->server_sock_fd);
+
+      msg = "Server is processing command...\n";
+      send_msg(sock->client_sock_fd, msg);
+
       break;
     default:
       break;
@@ -128,23 +134,9 @@ int main(void) {
       token = strtok(NULL, DELIMITER);
     }
 
-  printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
+    printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
 
-  server_cmd_handles(server_sck);
-
-  //-----------
-  char server_message[CHUNK_SIZE];
-    
-  memset(server_message, '\0', sizeof(server_message));
-  // Respond to client:
-  strcpy(server_message, "Server is processing sent message...");
-  // printf("%s\n", server_message); // check
-  if (send(server_sck->client_sock_fd, server_message, strlen(server_message), 0) < 0){
-    printf("Can't send\n");
-    free_socket(server_sck);
-    return -1;
-  }
-  //----------
+    server_cmd_handles(server_sck);
     
     // Closing the socket:
     close(server_sck->client_sock_fd);

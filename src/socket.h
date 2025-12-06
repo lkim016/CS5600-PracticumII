@@ -96,7 +96,15 @@ void set_sock_write_filepath(socket_t* sock);
 void free_socket(socket_t* sock);
 
 /**
- * @brief depending on the command, a TCP socket is being asked to read a file from its local env and then send it to the other TCP socket.
+ * @brief depending on the command, a TCP socket is sending a message to the other TCP socket either client or message.
+ *
+ * @param sock_fd int - the socket file descriptor that the file data will be sent to
+ * @param message const char* - a constant char string that is the message
+ */
+void send_msg(int sock_fd, const char* message);
+
+/**
+ * @brief depending on the command, a TCP socket is being asked to read a file from its local env and then send it to the other TCP socket either client or message.
  *
  * @param socket socket_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be sent to

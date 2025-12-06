@@ -159,11 +159,7 @@ int main(int argc, char* argv[]) {
     printf("Client Message: %s\n", client_message);
     
     // send client message - this sends the commands
-    if(send(client_sck->client_sock_fd, client_message, strlen(client_message), 0) < 0){
-      printf("Unable to send message\n");
-      free_socket(client_sck);
-      return -1;
-    }
+    send_msg(client_sck->client_sock_fd, client_message);
     //-----------
 
     client_cmd_handles(client_sck);
