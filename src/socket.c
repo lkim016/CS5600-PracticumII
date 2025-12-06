@@ -111,17 +111,17 @@ void set_sock_write_filepath(socket_t* sock) {
     switch(sock->command) {
         case WRITE:
                 if (sock->write_dirs == NULL) {
-                    dir_len = strlen(DEFAULT_CLIENT_DIR) + 1;
+                    dir_len = strlen(DEFAULT_SERVER_DIR) + 1;
                     char dir[dir_len]; // ex: data/file.txt
-                    sprintf(dir, "%s", DEFAULT_CLIENT_DIR);
+                    sprintf(dir, "%s", DEFAULT_SERVER_DIR);
                     sock->write_dirs = strdup(dir);
                 }
             break;
         case GET: // if local folder or file is omitted then use current folder
                 if (sock->write_dirs == NULL) {
-                    dir_len = strlen(DEFAULT_SERVER_DIR) + 1;
+                    dir_len = strlen(DEFAULT_CLIENT_DIR) + 1;
                     char dir[dir_len]; // ex: data/file.txt
-                    sprintf(dir, "%s", DEFAULT_SERVER_DIR);
+                    sprintf(dir, "%s", DEFAULT_CLIENT_DIR);
                     sock->write_dirs = strdup(dir);
                 }
             break;
