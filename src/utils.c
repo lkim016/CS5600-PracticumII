@@ -138,7 +138,7 @@ void send_file(socket_t* sock, int sock_fd) {
         fclose(file);
         return;
     }
-
+    printf("%d\n", strcmp(ack, "Y"));
     if (strcmp(ack, "Y") == 0) {
         // send the file data
         char buffer[CHUNK_SIZE]; // buffer to hold file chunks
@@ -203,6 +203,7 @@ int rcv_file(socket_t* sock, int sock_fd) {
         return -1;
     }
     size = ntohl(size);
+    printf("File Size: %u\n", size);
 
     // Send acknowledgment to client
     char *ack = "Y";
