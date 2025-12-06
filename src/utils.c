@@ -166,8 +166,15 @@ void rcv_file(socket_t* sock, int sock_fd) {
         exit(1);
     }
 
-    
-    
+    uint32_t size;
+    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
+        perror("Error receiving file size\n");
+        free_socket(sock);
+        exit(1);
+    }
+    size = ntohl(size);
+    printf("File size: %u\n", size);
+
 
     FILE *out_file = fopen(sock->write_filepath, "wb");
     if (out_file == NULL) {
@@ -175,16 +182,6 @@ void rcv_file(socket_t* sock, int sock_fd) {
         free_socket(sock);
         exit(1);
     }
-
-    uint32_t size;
-    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
-        perror("Error receiving file size\n");
-        fclose(out_file);
-        free_socket(sock);
-        exit(1);
-    }
-    size = ntohl(size);
-    printf("File size: %u\n", size);
 
     char buffer[CHUNK_SIZE];
     ssize_t received;
