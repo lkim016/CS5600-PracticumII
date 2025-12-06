@@ -116,6 +116,7 @@ void remove_directory(const char *path) {
 
 int rm_file_or_folder(socket_t* sock) {
     const char* filepath = sock->first_filepath;
+    printf("filepath: %s", filepath);
     const char* filename = sock->first_filename;
     const char* path = sock->first_dirs;
     FILE *file = fopen(filepath, "r");  // Try to open the file in read mode
@@ -127,7 +128,7 @@ int rm_file_or_folder(socket_t* sock) {
         mode_t mode = 0755; // Full permissions for the owner, read and execute for others.
         // Set the directory permissions
         if (chmod(path, mode) == 0) {
-            printf("Directory permissions changed to '%o'.\n", mode);
+            printf("Directory permissions changed to '%o'\n", mode);
         } else {
             perror("Error changing directory permissions");
             return -1;
@@ -161,7 +162,7 @@ int rm_file_or_folder(socket_t* sock) {
             if (rmdir(path) == 0) {  // Finally, remove the empty directory
                 printf("Directory '%s' has been removed successfully.\n", path);
             } else {
-                perror("Error removing the directory");
+                perror("Error removing the directory\n");
             }
             return 1;
         } else {
