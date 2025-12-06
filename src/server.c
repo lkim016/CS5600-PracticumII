@@ -13,11 +13,16 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+
 #include "config.h"
 #include "socket.h"
 #include "utils.h"
 
-
+/**
+ * @brief handles the CLI args commands for the server
+ *
+ * @param socket socket_t* - the pointer to the server socket metadata object
+ */
 void server_cmd_handles(socket_t* sock) {
   switch(sock->command) {
     case STOP:
@@ -34,6 +39,11 @@ void server_cmd_handles(socket_t* sock) {
 
 }
 
+/**
+ * @brief handles the CLI args commands
+ *
+ * @return int - 0 if success otherwise -1 for error 
+ */
 int main(void) {
   // int socket_desc, client_sock;
   socket_t* server_sck = create_socket();
@@ -132,7 +142,7 @@ int main(void) {
   if (send(server_sck->client_sock_fd, server_message, strlen(server_message), 0) < 0){
     printf("Can't send\n");
     free_socket(server_sck);
-    exit(1);
+    return -1;
   }
   //----------
     

@@ -18,7 +18,11 @@
 #include "socket.h"
 #include "utils.h"
 
-
+/**
+ * @brief handles the CLI args commands for the client
+ *
+ * @param socket socket_t* - the pointer to the client socket metadata object
+ */
 void client_cmd_handles(socket_t* sock) {
 
     // handle different commands
@@ -52,11 +56,11 @@ void client_cmd_handles(socket_t* sock) {
 }
 
 /**
- * @brief 
+ * @brief initiates a TCP socket client network connection
  * 
- * @param argc 
- * @param argv 
- * @return * int 
+ * @param argc int - count of arguments input from the CLI
+ * @param argv char* - arguments input from the CLI
+ * @return int - 0 if success otherwise -1 for error 
  */
 int main(int argc, char* argv[]) {
 
@@ -109,7 +113,7 @@ int main(int argc, char* argv[]) {
 
     if (msg_size < 1) {
         printf("Invalid message size\n");
-        exit(1);
+        return -1;
     }
     
     // set members of socket object

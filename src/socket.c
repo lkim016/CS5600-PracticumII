@@ -8,11 +8,6 @@
 
 #include "socket.h"
 
-/**
- * @brief Create and initialize a server socket object on the heap.
- *
- * @return socket_t* - return the initialized cache object
- */
 socket_t* create_socket() {
     socket_t* sock = (socket_t*) calloc(1, sizeof(socket_t));
     if (sock == NULL) {
@@ -31,6 +26,7 @@ socket_t* create_socket() {
     return sock;
 }
 
+
 commands str_to_cmd_enum(const char* str) {
     if (strcmp(str, "WRITE") == 0) return WRITE;
     if (strcmp(str, "GET") == 0) return GET;
@@ -39,13 +35,15 @@ commands str_to_cmd_enum(const char* str) {
     return NULL_VAL;
 }
 
-const char *cmd_enum_to_str(commands cmd) {
+
+const char* cmd_enum_to_str(commands cmd) {
     if (cmd == WRITE) return "WRITE";
     if (cmd == GET) return "GET";
     if (cmd == RM) return "RM";
     if (cmd == STOP) return "STOP";
     return NULL;
 }
+
 
 void set_sock_command(socket_t* sock, commands command) {
     if (sock == NULL) {
@@ -56,6 +54,7 @@ void set_sock_command(socket_t* sock, commands command) {
     sock->command = command;
 }
 
+
 void print_read_file_info(socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
@@ -64,6 +63,11 @@ void print_read_file_info(socket_t* sock) {
     printf("Parent Dir: %s, Filename: %s\n", sock->read_pdir, sock->read_filename);
 }
 
+/*
+Notes:
+- check if there's a folder if not then use default path and file
+- need to check if the sock->read_pdir is null - if pdir is null then just return filename
+*/
 void set_sock_read_filepath(socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
@@ -71,8 +75,6 @@ void set_sock_read_filepath(socket_t* sock) {
     }
 
     int file_path_len = 0;
-    // check if there's a folder if not then use default path and file
-    // need to check if the sock->read_pdir is null - if pdir is null then just return filename
     if (sock->read_pdir != NULL) {
         file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(sock->read_pdir) + strlen(sock->read_filename) + 1;
         char path[file_path_len]; // ex: data/file.txt
@@ -85,6 +87,7 @@ void set_sock_read_filepath(socket_t* sock) {
         sock->read_filepath = strdup(path);
     }
 }
+
 
 void set_sock_write_filepath(socket_t* sock) {
     if (sock == NULL) {
@@ -126,11 +129,6 @@ void set_sock_write_filepath(socket_t* sock) {
 }
 
 
-/**
- * @brief free the socket object and its members.
- *
- * @param socket socket_t* - the pointer to the socket object
- */
 void free_socket(socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
@@ -314,106 +312,3 @@ void rcv_file(socket_t* sock) {
 
     fclose(out_file);
 }
-
-
-// socket_send_write() {}
-
-
-/*
-ssize_t send_all(int sock, const void *buf, size_t len) {
-    size_t sent = 0;
-    const char *p = buf;
-    while (sent < len) {
-        ssize_t n = send(sock, p + sent, len - sent, 0);
-        if (n <= 0) return n;
-        sent += n;
-    }
-    return sent;
-}
-
-
-ssize_t rcv_all(int sock, void *buf, size_t len) {
-    size_t recvd = 0;
-    char *p = buf;
-    while (recvd < len) {
-        ssize_t n = recv(sock, p + recvd, len - recvd, 0);
-        if (n <= 0) return n;
-        recvd += n;
-    }
-    return recvd;
-}
-
-// SENDER
-int send_msg(int sockfd, const char* command, const char* filename, const uint8_t* file_data, size_t file_size) {
-    msg_header_t header;
-
-    header.command_len = htonl(strlen(command));
-    header.filename_len = htonl(strlen(filename));
-    header.file_size = htonll(file_size);
-    
-    // Send header
-    if (send_all(sockfd, &header, sizeof(header)) < 0)
-        return -1;
-    
-    // Send command
-    if (send_all(sockfd, command, strlen(command)) < 0)
-        return -1;
-    
-    // Send filename
-    if (send_all(sockfd, filename, strlen(filename)) < 0)
-        return -1;
-    
-    // Send file data
-    if (send_all(sockfd, file_data, file_size) < 0)
-        return -1;
-    
-    return 0;
-}
-
-// RECEIVER
-int rcv_msg(int sockfd, char** command, char** filename, uint8_t** file_data, size_t* file_size) {
-    msg_header_t header;
-    
-    // Receive header
-    if (rcv_all(sockfd, &header, sizeof(header)) < 0)
-        return -1;
-    
-    // Convert from network byte order
-    uint32_t cmd_len = ntohl(header.command_len);
-    uint32_t fname_len = ntohl(header.filename_len);
-    *file_size = ntohll(header.file_size);
-    
-    // Validate lengths (security!)
-    if (cmd_len > 1024 || fname_len > 4096 || *file_size > 1ULL << 32) {
-        return -1;  // Reject suspiciously large values
-    }
-    
-    // Allocate and receive command
-    *command = malloc(cmd_len + 1);
-    if (recv_all(sockfd, *command, cmd_len) < 0) {
-        free(*command);
-        return -1;
-    }
-    (*command)[cmd_len] = '\0';
-    
-    // Allocate and receive filename
-    *filename = malloc(fname_len + 1);
-    if (recv_all(sockfd, *filename, fname_len) < 0) {
-        free(*command);
-        free(*filename);
-        return -1;
-    }
-    (*filename)[fname_len] = '\0';
-    
-    // Allocate and receive file data
-    *file_data = malloc(*file_size);
-    if (recv_all(sockfd, *file_data, *file_size) < 0) {
-        free(*command);
-        free(*filename);
-        free(*file_data);
-        return -1;
-    }
-    
-    return 0;
-}
-*/
