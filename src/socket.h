@@ -115,7 +115,7 @@ void set_write_file_ext(socket_t* sock);
  * @param path const char * - path input from the CLI args
  * @param socket socket_t* - the pointer to the socket metadata object
  */
-void set_write_fileInfo(const char *path, socket_t* sock);
+void set_read_fileInfo(const char *path, socket_t* sock);
 
 /**
  * @brief splits the provided path into filename and parent directory for the write file.

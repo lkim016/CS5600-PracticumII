@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     // set members of socket object
     set_sock_command(client_sck, str_to_cmd_enum(argv[1]));
     if (argc > 2) { // set read_filepath
-        set_write_fileInfo(argv[2], client_sck);
+        set_read_fileInfo(argv[2], client_sck);
         set_read_file_ext(client_sck);
         set_sock_read_filepath(client_sck);
     }
