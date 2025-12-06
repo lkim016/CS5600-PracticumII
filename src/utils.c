@@ -72,11 +72,99 @@ int folder_not_exists_make(const char* file_path) {
     return 1;
 }
 
-/*
-int rm_folder(const char* folder_path) {
+/**
+ * @brief Function to remove a directory and all of its contents for command RM
+ *
+ * @param path const char* - the socket metadata object's folder path (write_dirs)
+ */
+void remove_directory(const char *path) {
+    DIR *dir = opendir(path);
+    struct dirent *entry;
+    char fullPath[512];
 
+    if (dir == NULL) {
+        perror("Error opening directory");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip "." and ".." entries
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        // Create the full path to the file or subdirectory
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", path, entry->d_name);
+
+        // Check if it's a directory or a file
+        struct stat statbuf;
+        if (stat(fullPath, &statbuf) == 0) {
+            if (S_ISDIR(statbuf.st_mode)) {
+                // If it's a directory, recursively remove its contents
+                remove_directory(fullPath);
+                rmdir(fullPath);  // Remove the empty subdirectory after deleting its contents
+            } else {
+                // If it's a file, remove it
+                remove(fullPath);
+            }
+        }
+    }
+
+    closedir(dir);
 }
-*/
+
+
+int rm_file_or_folder(socket_t* sock) {
+    const char* filepath = sock->first_filepath;
+    const char* filename = sock->first_filename;
+    const char* path = sock->first_dirs;
+    FILE *file = fopen(filepath, "r");  // Try to open the file in read mode
+
+    if (file) {
+        printf("File '%s' exists\n", filename);
+        fclose(file);  // Close the file after checking
+
+        mode_t mode = 0666;
+        if(chmod(filepath, mode) == 0) {
+            printf("Permissions set to '%o' for '%s'\n", mode, filename);
+            // Remove the file
+
+            if (remove(filename) == 0) {
+                printf("File '%s' has been deleted successfully\n", filename);
+                return 1;
+            } else {
+                perror("Error deleting the file\n");
+                return -1;
+            }
+        } else {
+            perror("Error setting file permissions\n");
+            return -1;
+        }
+    } else {
+        printf("File '%s' does not exist\n", filename);
+        // Try to open the directory
+        DIR *dir = opendir(path);
+        if (dir) {
+            printf("Directory '%s' exists.\n", path);
+            closedir(dir);  // Close the directory when done
+
+            remove_directory(path);
+
+            if (rmdir(path) == 0) {  // Finally, remove the empty directory
+                printf("Directory '%s' has been removed successfully.\n", path);
+            } else {
+                perror("Error removing the directory");
+            }
+            return 1;
+        } else {
+            printf("Directory '%s' does not exist or cannot be opened\n", path);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 
 int send_msg(int sock_fd, const char* message) {
   // printf("%s\n", server_message); // check

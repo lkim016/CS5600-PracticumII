@@ -32,4 +32,4 @@
 #define DEFAULT_CLIENT_FILENAME "file.txt"
 #define DEFAULT_SERVER_DIR "server_data/"
 #define DEFAULT_SERVER_FILENAME "file.txt"
-#define DEFAULT_FILE_EXT ".txt"
+#define DEFAULT_FILE_EXT "txt"

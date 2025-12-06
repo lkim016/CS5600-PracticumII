@@ -46,7 +46,7 @@ void server_cmd_handles(socket_t* sock) {
           }
 
           if (send_msg(sock->client_sock_fd, msg) < 0) {
-              perror("Failed to send response to client");
+              perror("Failed to send response to client\n");
           }
 
         break;
@@ -55,16 +55,23 @@ void server_cmd_handles(socket_t* sock) {
         send_file(sock, sock->client_sock_fd);
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
-            perror("Error receiving acknowledgment from server");
+            perror("Error receiving acknowledgment from server\n");
             return;
         }
         
         printf("Client's response: %s\n", client_message);
         break;
     case RM:
+        const char* rm_obj = sock->first_filepath;
         // if command is RM then check if
-        if (strcmp(sock->first_dirs, DEFAULT_SERVER_DIR) != 0) {
+        if(rm_file_or_folder(sock) != 1) {
+            sprintf(msg, "Failed to remove %s\n", rm_obj);
+        } else {
+            sprintf(msg, "Successfully removed %s\n", rm_obj);
+        }
 
+        if (send_msg(sock->client_sock_fd, msg) < 0) {
+            perror("Failed to send response to client\n");
         }
         break;
     case STOP:

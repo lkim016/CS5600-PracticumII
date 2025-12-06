@@ -100,7 +100,7 @@ void set_sock_first_filepath(socket_t* sock) {
     return;
 }
 
-
+// WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
 void set_sock_sec_filepath(socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
@@ -146,13 +146,7 @@ void set_sock_sec_filepath(socket_t* sock) {
 
 
 void set_first_file_ext(socket_t* sock) {
-    // Separate out the extension from the filename
-    const char *last_dot = strrchr(sock->first_filename, '.');  // Find the last period in the filename
-    if (last_dot != NULL) {
-        // If a period is found, extract the extension
-        sock->first_file_ext = strdup(last_dot + 1);  // Copy the extension into first_file_ext (without the period)
-        return;
-    }
+    
     return;
 }
 
@@ -168,7 +162,11 @@ void set_sec_file_ext(socket_t* sock) {
     return;
 }
 
-
+/*
+Assumptions:
+- if there is no slash and no file extension then it will be treated as a file
+- if there is a slash but no file extension then it will be treated as a folder
+*/
 void set_first_fileInfo(const char *path, socket_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
@@ -176,6 +174,7 @@ void set_first_fileInfo(const char *path, socket_t* sock) {
     }
     // Find the last occurrence of the directory separator
     const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
+    const char *last_dot = strrchr(path, '.');  // Find the last period in the filename
     if (last_slash != NULL) {
         // Copy the directory part
         size_t dir_len = last_slash - path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
@@ -188,13 +187,30 @@ void set_first_fileInfo(const char *path, socket_t* sock) {
         strncpy(sock->first_dirs, path, dir_len);  // Copy the directory part into first_dirs
         // sock->first_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
 
-        // Copy the filename part (after the last separator)
-        sock->first_filename = strdup(last_slash + 1);  // Copy the extension into sec_file_ext (without the period)  // Copy the filename part into first_filename
+        // Separate out the extension from the filename
+        if (last_dot != NULL) {
+            // If a period is found, extract the extension
+            sock->first_file_ext = strdup(last_dot + 1);  // Copy the extension into first_file_ext (without the period)
+            
+            // Copy the filename part (after the last separator)
+            sock->first_filename = strdup(last_slash + 1);  // Copy the filename part into first_filename
+        }
         return;
 
-    } else {
-        // If no directory separator is found, the whole path is the filename
-        sock->first_filename = strdup(path); // Copy the whole path into first_filename
+    } else { // if there's no directory just the file
+        // Separate out the extension from the filename
+        if (last_dot != NULL) {
+            // If a period is found, extract the extension
+            sock->first_file_ext = strdup(last_dot + 1);  // Copy the extension into first_file_ext (without the period)
+            // If no directory separator is found, the whole path is the filename
+            sock->first_filename = strdup(path); // Copy the whole path into first_filename
+        } else {
+            sock->first_file_ext = strdup(DEFAULT_FILE_EXT);  // Copy the extension into first_file_ext (without the period)
+            // If no directory separator is found, the whole path is the filename
+            size_t fn_len = strlen(path) + 1 + strlen(DEFAULT_FILE_EXT); // +1 for the missing period
+            sock->first_filename = (char*)calloc(fn_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
+            sprintf(sock->first_filename, "%s.%s", path, sock->first_file_ext); // Copy the whole path into first_filename
+        }
         return;
     }
     return;
