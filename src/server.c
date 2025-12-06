@@ -97,6 +97,7 @@ int main(void) {
     }
     printf("Msg from client: %s\n", client_message);
 
+    /*
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
@@ -112,8 +113,9 @@ int main(void) {
       token_count++;
       token = strtok(NULL, DELIMITER);
     }
+    */
 
-  printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filename, server_sck->write_filename);
+  printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->read_filepath, server_sck->write_filepath);
 
     server_cmd_handles(server_sck);
 

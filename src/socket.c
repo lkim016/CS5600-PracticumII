@@ -20,8 +20,8 @@ socket_t* create_socket() {
         exit(1);
     }
     sock->command = NULL_VAL;
-    sock->read_filename = NULL;
-    sock->write_filename = NULL;
+    sock->read_filepath = NULL;
+    sock->write_filepath = NULL;
 
     return sock;
 }
@@ -51,23 +51,186 @@ void set_sock_command(socket_t* sock, commands command) {
     sock->command = command;
 }
 
-void set_sock_read_fn(socket_t* sock, const char* read_filename) {
+void split_read_path(const char *path, socket_t* sock) {
+    // Find the last occurrence of the directory separator
+    const char *last_sep = strrchr(path, PATH_DELIMITER);
+    
+    if (last_sep != NULL) {
+        // Copy the directory part
+        size_t dir_len = last_sep - path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
+        sock->read_pdir = (char*)calloc(dir_len + 1, sizeof(char));  // Allocate memory for the directory part, including the null terminator
+        if (sock->read_pdir == NULL) {
+            // Handle memory allocation failure if needed
+            perror("calloc failed for read_pdir");
+            exit(1);
+        }
+        strncpy(sock->read_pdir, path, dir_len);  // Copy the directory part into read_pdir
+        // sock->read_pdir[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
+
+        // Copy the filename part (after the last separator)
+        sock->read_filename = (char*)calloc(strlen(last_sep + 1) + 1, sizeof(char));  // Allocate memory for the filename part
+        if (sock->read_filename == NULL) {
+            perror("calloc failed for read_filename");
+            exit(1);
+        }
+        strcpy(sock->read_filename, last_sep + 1);  // Copy the filename part into read_filename
+
+        /*
+        // Separate out the extension from the filename
+        char *ext = strrchr(sock->read_filename, '.');  // Find the last period in the filename
+        if (ext != NULL) {
+            // If a period is found, extract the extension
+            sock->read_extension = strdup(ext + 1);  // Copy the extension into read_extension (without the period)
+        } else {
+            // If no period is found, there is no extension
+            sock->read_extension = NULL;
+        }
+        */
+    } else {
+        // If no directory separator is found, the whole path is the filename
+        size_t dir_len = strlen(path);  // Directory length will be the full length of the path
+        sock->read_pdir = (char*)calloc(1, sizeof(char));  // Allocate memory for an empty string (no directory part)
+        if (sock->read_pdir == NULL) {
+            perror("calloc failed for read_pdir (no separator)");
+            exit(1);
+        }
+        sock->read_filename = (char*)calloc(dir_len + 1, sizeof(char));  // Allocate memory for the full filename
+        if (sock->read_filename == NULL) {
+            perror("calloc failed for read_filename (no separator)");
+            exit(1);
+        }
+        strcpy(sock->read_filename, path);  // Copy the whole path into read_filename
+        sock->read_pdir[0] = '\0';  // No directory part, set it as an empty string
+
+        /*
+        // Separate out the extension from the filename
+        char *ext = strrchr(sock->read_filename, '.');  // Find the last period in the filename
+        if (ext != NULL) {
+            // If a period is found, extract the extension
+            sock->read_extension = strdup(ext + 1);  // Copy the extension into read_extension (without the period)
+        } else {
+            // If no period is found, there is no extension
+            sock->read_extension = NULL;
+        }
+        */
+    }
+}
+
+void print_read_file_info(socket_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        return;
+    }
+    printf("Parent Dir: %s, Filename: %s", sock->read_pdir, sock->read_filename);
+}
+
+void split_write_path(const char *path, socket_t* sock) {
+    // Find the last occurrence of the directory separator
+    const char *last_sep = strrchr(path, PATH_DELIMITER);
+    
+    if (last_sep != NULL) {
+        // Copy the directory part
+        size_t dir_len = last_sep - path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
+        sock->write_pdir = (char*)calloc(dir_len + 1, sizeof(char));  // Allocate memory for the directory part, including the null terminator
+        if (sock->write_pdir == NULL) {
+            // Handle memory allocation failure if needed
+            perror("calloc failed for write_pdir");
+            exit(1);
+        }
+        strncpy(sock->write_pdir, path, dir_len);  // Copy the directory part into write_pdir
+        // sock->write_pdir[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
+
+        // Copy the filename part (after the last separator)
+        sock->write_filename = (char*)calloc(strlen(last_sep + 1) + 1, sizeof(char));  // Allocate memory for the filename part
+        if (sock->write_filename == NULL) {
+            perror("calloc failed for write_filename");
+            exit(1);
+        }
+        strcpy(sock->write_filename, last_sep + 1);  // Copy the filename part into write_filename
+
+    } else {
+        // If no directory separator is found, the whole path is the filename
+        size_t dir_len = strlen(path);  // Directory length will be the full length of the path
+        sock->write_pdir = (char*)calloc(1, sizeof(char));  // Allocate memory for an empty string (no directory part)
+        if (sock->write_pdir == NULL) {
+            perror("calloc failed for write_pdir (no separator)");
+            exit(1);
+        }
+        sock->write_filename = (char*)calloc(dir_len + 1, sizeof(char));  // Allocate memory for the full filename
+        if (sock->write_filename == NULL) {
+            perror("calloc failed for write_filename (no separator)");
+            exit(1);
+        }
+        strcpy(sock->write_filename, path);  // Copy the whole path into write_filename
+        sock->write_pdir[0] = '\0';  // No directory part, set it as an empty string
+
+    }
+}
+/*
+const char *get_default_read_path(socket_t* sock) {
+    switch(sock->command) {
+        case WRITE:
+            int file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(DEFAULT_CLIENT_FILENAME) + 1;
+            char result[file_path_len]; // ex: data/file.txt
+            sprintf(result, "%s%s", DEFAULT_CLIENT_PATH, DEFAULT_CLIENT_FILENAME);
+        case GET:
+            int file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(DEFAULT_SERVER_FILENAME) + 1;
+            char result[file_path_len]; // ex: data/file.txt
+            sprintf(result, "%s%s", DEFAULT_SERVER_PATH, DEFAULT_SERVER_FILENAME);
+            sock->read_filepath = strdup(result);
+            return result;
+        default:
+            return NULL;
+    }
+}
+
+void set_sock_read_filepath(socket_t* sock, const char* read_filepath) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL");
+        exit(1);
+    }
+    // check if there's a folder if not then use default path and file
+    if (read_filepath == NULL) {
+        const char* default_read_path = get_default_read_path(sock);
+        sock->read_filepath = strdup(default_read_path);
+    } else {
+        // check if there's an extension
+        sock->read_filepath = strdup(read_filepath);
+    }
+}
+
+const char *get_default_write_path(socket_t* sock) {
+    switch(sock->command) {
+        case WRITE:
+            int file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(DEFAULT_SERVER_FILENAME) + 1;
+            char result[file_path_len]; // ex: data/file.txt
+            sprintf(result, "%s%s", DEFAULT_SERVER_PATH, DEFAULT_SERVER_FILENAME);
+            return result;
+        case GET:
+            int file_path_len = strlen(DEFAULT_CLIENT_PATH) + strlen(DEFAULT_CLIENT_FILENAME) + 1;
+            char result[file_path_len]; // ex: data/file.txt
+            sprintf(result, "%s%s", DEFAULT_CLIENT_PATH, DEFAULT_CLIENT_FILENAME);
+            return result;
+        default:
+            return NULL;
+    }
+}
+
+void set_sock_write_filepath(socket_t* sock, const char* write_filepath) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL");
         exit(1);
     }
 
-    sock->read_filename = strdup(read_filename);
-}
-
-void set_sock_write_fn(socket_t* sock, const char* write_filename) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL");
-        exit(1);
+    // check if there's a folder if not then use default path and file
+    if (write_filepath == NULL) {
+        const char* default_write_path = get_default_read_path(sock);
+        sock->write_filepath = strdup(default_write_path);
+    } else {
+        sock->write_filepath = strdup(write_filepath);
     }
-
-    sock->write_filename = strdup(write_filename);
 }
+*/
 
 /**
  * @brief free the socket object and its members.
@@ -80,11 +243,25 @@ void free_socket(socket_t* sock) {
         exit(1);
     }
 
+    if (sock->read_pdir != NULL) {
+        free(sock->read_pdir);
+    }
+    if (sock->write_pdir != NULL) {
+        free(sock->write_pdir);
+    }
+
     if (sock->read_filename != NULL) {
         free(sock->read_filename);
     }
     if (sock->write_filename != NULL) {
         free(sock->write_filename);
+    }
+
+    if (sock->read_filepath != NULL) {
+        free(sock->read_filepath);
+    }
+    if (sock->write_filepath != NULL) {
+        free(sock->write_filepath);
     }
 
     if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
@@ -102,7 +279,7 @@ void send_file(socket_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL");
         exit(1);
     }
-    if (sock->read_filename == NULL) {
+    if (sock->read_filepath == NULL) {
         fprintf(stderr, "ERROR: read filename is NULL");
         exit(1);
 
@@ -129,34 +306,31 @@ void send_file(socket_t* sock) {
         break;
     }
 
-    int file_path_len = strlen(LOCAL_FILE_PATH) + strlen(sock->read_filename) + 1;
-    char file_path[file_path_len]; // ex: data/file.txt
-    sprintf(file_path, "%s%s", LOCAL_FILE_PATH, sock->read_filename);
     // printf("Local File path: %s\n", file_path);
-    FILE *file = fopen(file_path, "rb"); // "rb" for read binary
+    FILE *file = fopen(sock->read_filepath, "rb"); // "rb" for read binary
     if (file == NULL) {
-        perror("Error opening file");
+        perror("Error opening read file");
         free_socket(sock);
         exit(1);
     }
 
     // Get the size of the file
     if (fseek(file, 0, SEEK_END) != 0) {
-        perror("Error seeking to end of file");
+        perror("Error seeking to end of read file");
         free_socket(sock);
         fclose(file);
         exit(1);
     }
     long file_size = ftell(file);
     if(file_size < 0) {
-        perror("Error getting file size");
+        perror("Error getting read file size");
         free_socket(sock);
         fclose(file);
         exit(1);
 
     }
     if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
-        perror("Error seeking to start of file");
+        perror("Error seeking to start of read file");
         free_socket(sock);
         fclose(file);
         exit(1);
@@ -196,7 +370,7 @@ void rcv_file(socket_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL");
         exit(1);
     }
-    if (sock->write_filename == NULL) {
+    if (sock->write_filepath == NULL) {
         fprintf(stderr, "ERROR: write filename is NULL");
         exit(1);
 
@@ -230,7 +404,13 @@ void rcv_file(socket_t* sock) {
     char buffer[CHUNK_SIZE];
     ssize_t received;
 
-    FILE *out_file = fopen(sock->write_filename, "wb");
+    FILE *out_file = fopen(sock->write_filepath, "wb");
+    if (out_file == NULL) {
+        perror("Error opening write file");
+        free_socket(sock);
+        exit(1);
+    }
+
     int chunk_count = (size + CHUNK_SIZE - 1) / CHUNK_SIZE;
     for (int i = 0; i < chunk_count; i++) {
         while ((received = recv(rcv_socket, buffer, CHUNK_SIZE, 0)) > 0) {

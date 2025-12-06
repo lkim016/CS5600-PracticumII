@@ -11,4 +11,14 @@
 
 #define DELIMITER ","
 
-#define LOCAL_FILE_PATH "data/"  // file that tells us the next un-used id number
+#ifdef _WIN32
+    #define PATH_DELIMITER '\\'
+#else
+    #define PATH_DELIMITER '/'
+#endif
+
+#define DEFAULT_CLIENT_PATH "data/"
+#define DEFAULT_CLIENT_FILENAME "file.txt"
+#define DEFAULT_REMOTE_PATH "server_data/"
+#define DEFAULT_REMOTE_FILENAME "file.txt"
+#define DEFAULT_FILE_EXT ".txt"

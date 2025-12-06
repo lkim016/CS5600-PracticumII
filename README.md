@@ -13,3 +13,5 @@
 [^4]: "Socket Programming in C." GeeksforGeeks, 07 Aug 2025. https://www.geeksforgeeks.org/c/socket-programming-cc/. Accessed: 2025-12-02.  
 [^5]: "Handling multiple clients on server with multithreading using Socket Programming in C/C++." GeeksforGeeks, 23 Jul 2025. https://www.geeksforgeeks.org/cpp/  
 
+# TODO:
+1. check for file extension using Method 1: Using the `Path.GetExtension()` Method - https://hatchjs.com/c-get-file-extension/

@@ -28,8 +28,12 @@ typedef struct socket_data {
     int client_sock_fd; // file descriptor for the client socket
     int server_sock_fd; // file descriptor for the server socket
     commands command; // command to be executed
-    char *read_filename; // filename of the file being sent
-    char *write_filename; // filename of the file being received
+    char *read_pdir; // filename of the file being sent
+    char *read_filename;
+    char *read_filepath;
+    char *write_pdir; // filename of the file being received
+    char *write_filename;
+    char *write_filepath;
 } socket_t;
 
 /**
@@ -45,9 +49,15 @@ const char *cmd_enum_to_str(commands cmd);
 
 void set_sock_command(socket_t* sock, commands command);
 
-void set_sock_read_fn(socket_t* sock, const char* read_filename);
+void split_read_path(const char *path, socket_t* sock);
 
-void set_sock_write_fn(socket_t* sock, const char* write_filename);
+void split_write_path(const char *path, socket_t* sock);
+
+void print_read_file_info(socket_t* sock);
+
+void set_sock_read_filepath(socket_t* sock, const char* read_filepath);
+
+void set_sock_write_filepath(socket_t* sock, const char* write_filepath);
 
 void free_socket(socket_t* sock);
 

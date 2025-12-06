@@ -20,14 +20,13 @@ void client_cmd_handles(socket_t* sock) {
     // handle different commands
     switch (sock->command) {
       case WRITE:
-        if (sock->read_filename == NULL) { // need to handle the file within the command since it can differ based on the command
+        if (sock->read_filepath == NULL) { // need to handle the file within the command since it can differ based on the command
           printf("Invalid file path\n");
           free_socket(sock);
           exit(1);
         }
 
         // send the file to server
-        set_sock_read_fn(sock, sock->read_filename);
         send_file(sock);
         /*
       } else if(strcmp(command, "GET") == 0) { // For GET, no file data is sent but still need to send the command, filename, and 
@@ -111,13 +110,15 @@ int main(int argc, char* argv[]) {
     
     // set members of socket object
     set_sock_command(client_sck, str_to_cmd_enum(argv[1]));
-    if (argc > 2) {
-        set_sock_read_fn(client_sck, argv[2]);
+    if (argc > 2) { // set read_filepath
+        split_read_path(argv[2], client_sck);
     }
-    if (argc > 3) {
-        set_sock_write_fn(client_sck, argv[3]);
+    if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
+        split_write_path(argv[3], client_sck);
     }
-    //----------- 
+
+    print_read_file_info(client_sck);
+    //-----------
     // Declare client message - since its a stream will send as comma-delimited string
     char client_message[msg_size];
     // Clean buffer:
