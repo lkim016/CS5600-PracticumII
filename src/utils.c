@@ -116,7 +116,6 @@ void remove_directory(const char *path) {
 
 int rm_file_or_folder(socket_t* sock) {
     const char* filepath = sock->first_filepath;
-    printf("filepath: %s", filepath);
     const char* filename = sock->first_filename;
     const char* path = sock->first_dirs;
     FILE *file = fopen(filepath, "r");  // Try to open the file in read mode
@@ -138,7 +137,7 @@ int rm_file_or_folder(socket_t* sock) {
             printf("Permissions set to '%o' for '%s'\n", mode, filename);
             // Remove the file
 
-            if (remove(filename) == 0) {
+            if (remove(filepath) == 0) {
                 printf("File '%s' has been deleted successfully\n", filename);
                 return 1;
             } else {
