@@ -107,37 +107,33 @@ void set_sock_write_filepath(socket_t* sock) {
         exit(1);
     }
 
-    int file_path_len = 0;
+    int dir_len = 0;
     switch(sock->command) {
         case WRITE:
-                if (sock->write_dirs != NULL) {
-                    file_path_len = strlen(sock->write_dirs) + strlen(sock->write_filename) + 1;
-                    char path[file_path_len]; // ex: data/file.txt
-                    sprintf(path, "%s%s", sock->write_dirs, sock->write_filename);
-                    sock->write_filepath = strdup(path);
-                } else {
-                    file_path_len = strlen(sock->write_filename) + 1;
-                    char path[file_path_len]; // ex: data/file.txt
-                    sprintf(path, "%s", sock->write_filename);
-                    sock->write_filepath = strdup(path);
+                if (sock->write_dirs == NULL) {
+                    dir_len = strlen(DEFAULT_CLIENT_DIR) + 1;
+                    char dir[dir_len]; // ex: data/file.txt
+                    sprintf(dir, "%s", DEFAULT_CLIENT_DIR);
+                    sock->write_dirs = strdup(dir);
                 }
             break;
         case GET: // if local folder or file is omitted then use current folder
-                if (sock->write_dirs != NULL) {
-                    file_path_len = strlen(sock->write_dirs) + strlen(sock->write_filename) + 1;
-                    char path[file_path_len]; // ex: data/file.txt
-                    sprintf(path, "%s%s", sock->write_dirs, sock->write_filename);
-                    sock->write_filepath = strdup(path);
-                } else {
-                    file_path_len = strlen(sock->write_filename) + 1;
-                    char path[file_path_len]; // ex: data/file.txt
-                    sprintf(path, "%s", sock->write_filename);
-                    sock->write_filepath = strdup(path);
+                if (sock->write_dirs == NULL) {
+                    dir_len = strlen(DEFAULT_SERVER_DIR) + 1;
+                    char dir[dir_len]; // ex: data/file.txt
+                    sprintf(dir, "%s", DEFAULT_SERVER_DIR);
+                    sock->write_dirs = strdup(dir);
                 }
             break;
         default:
             break;
     }
+
+    int file_path_len = strlen(sock->write_dirs) + strlen(sock->write_filename) + 1;
+    char path[file_path_len]; // ex: data/file.txt
+    sprintf(path, "%s%s", sock->write_dirs, sock->write_filename);
+    sock->write_filepath = strdup(path);
+
     return;
 }
 
