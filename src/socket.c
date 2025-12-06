@@ -99,10 +99,18 @@ void set_sock_write_filepath(socket_t* sock) {
     switch(sock->command) {
         case WRITE:
             if (sock->write_filename != NULL) {
-                file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(sock->write_filename) + 1;
-                char path[file_path_len]; // ex: data/file.txt
-                sprintf(path, "%s%s", DEFAULT_SERVER_PATH, sock->write_filename);
-                sock->write_filepath = strdup(path);
+                if (sock->write_pdir != NULL) {
+                    file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(sock->write_pdir) + strlen(sock->write_filename) + 1;
+                    char path[file_path_len]; // ex: data/file.txt
+                    sprintf(path, "%s%s%s", DEFAULT_SERVER_PATH, sock->write_pdir, sock->write_filename);
+                    sock->write_filepath = strdup(path);
+                } else {
+                    file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(sock->write_filename) + 1;
+                    char path[file_path_len]; // ex: data/file.txt
+                    sprintf(path, "%s%s", DEFAULT_SERVER_PATH, sock->write_filename);
+                    sock->write_filepath = strdup(path);
+                }
+                
             } else {
                 file_path_len = strlen(DEFAULT_SERVER_PATH) + strlen(sock->read_filename) + 1;
                 char path[file_path_len]; // ex: data/file.txt
@@ -173,6 +181,12 @@ void send_msg(int sock_fd, const char* message) {
     return;
   }
 }
+
+/*
+bool check_folder_exists(const char* path) {
+
+}
+*/
 
 void send_file(socket_t* sock, int sock_fd) {
     if (sock == NULL) {

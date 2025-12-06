@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <dirent.h>
 #include <string.h>
 
 #include "config.h"
@@ -31,9 +32,11 @@ typedef struct socket_data {
     char *read_pdir; // parent dir of the file being read
     char *read_filename; // filename of the file being read
     char *read_filepath; // filepath of the file being read
+    char *read_file_ext; // file extension of the file being read
     char *write_pdir; // parent dir of the file being written
     char *write_filename; // filename of the file being written
     char *write_filepath; // filepath of the file being written
+    char *write_file_ext; // file extension of the file being written
 } socket_t;
 
 /**
