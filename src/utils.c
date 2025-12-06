@@ -130,7 +130,9 @@ void send_file(socket_t* sock, int sock_fd) {
     }
 
     // Wait for acknowledgment from the server before sending file data
-    char *ack = NULL;
+    char ack[1];
+    // Clean buffer:
+    memset(ack,'\0',sizeof(ack));
     if (recv(sock_fd, ack, 1, 0) < 0) {
         perror("Error receiving acknowledgment from server\n");
         fclose(file);
@@ -162,7 +164,9 @@ void send_file(socket_t* sock, int sock_fd) {
             }
         }
     }
-    
+
+    // Clean buffer:
+    memset(ack,'\0',sizeof(ack));
     if (recv(sock_fd, ack, 1, 0) < 0) {
         perror("Error receiving acknowledgment from server\n");
         fclose(file);
