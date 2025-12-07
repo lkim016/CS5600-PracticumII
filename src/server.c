@@ -172,7 +172,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
  * @return int - 0 if success otherwise -1 for error 
  */
 int main(void) {
-  int socket_desc, client_sock;
+  int socket_desc;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
   
@@ -215,7 +215,7 @@ int main(void) {
     pthread_mutex_unlock(&socket_mutex);
 
     printf("\nListening for incoming connections on port %d\n", PORT);
-
+    int client_sock;
     
     // Accept an incoming connection:
     client_size = sizeof(client_addr);
@@ -236,8 +236,10 @@ int main(void) {
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
 
+    pthread_mutex_lock(&socket_mutex);
     // Set server socket metadata
     set_server_sock_metadata(server_metadata);
+    pthread_mutex_unlock(&socket_mutex);
     
     printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_metadata->command), server_metadata->first_filepath, server_metadata->sec_filepath);
     print_write_file_info(server_metadata); // FIXME: maybe delete

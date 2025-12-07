@@ -100,7 +100,6 @@ void client_cmd_handler(socket_md_t* sock) {
 void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
   // set members of socket object
   set_command(sock, str_to_cmd_enum(argv[1]));
-  printf("is this the issue?");
 
   if (argc > 2) { // set first_filepath
       set_first_fileInfo(argv[2], sock);
