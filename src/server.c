@@ -143,6 +143,7 @@ void* server_cmd_handler(void* arg) {
         usleep(10000);  // 10ms delay
 
         handle_stop(msg);
+        free(msg);
         break;
     default:
         printf("Unknown command\n");
@@ -151,8 +152,6 @@ void* server_cmd_handler(void* arg) {
   
   printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
 
-  // Clean and Closing the socket:
-  free_socket(sock);
   return NULL;
 }
 
@@ -284,7 +283,7 @@ int main(void) {
     // Create reader and writer threads:
     pthread_t thread;
 
-    // cmd hanling thread
+    // cmd handling thread
     if (pthread_create(&thread, NULL, server_cmd_handler, (void*)server_metadata) != 0) {
         perror("Failed to create reader thread");
         close(server_metadata->client_sock_fd);
@@ -292,7 +291,9 @@ int main(void) {
     }
 
     pthread_detach(thread); // Detach the thread to manage its own cleanup
-
+    
+    // Clean and Closing the socket:
+    free_socket(server_metadata);
   }
 
   close(socket_desc);
