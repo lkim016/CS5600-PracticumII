@@ -135,30 +135,31 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     int msize = 0;
     // Calculate message length when combined by delimiters - command,filename,file_size,remote_filename
     for(int i = 1; i < argc; i++) {
-      msize += strlen(argv[i]) + 1; // Adding 1 for the delimiter/comma
+      msize += strlen(argv[i]); // Adding 1 for the delimiter/comma
     }
 
-    if (msize < 1) {
-        printf("Invalid message size\n");
-        return;
+    // Add delimiter lengths (only between arguments, not after last)
+    if (argc > 2) {
+        msize += (argc - 2) * strlen(DELIMITER);
     }
-    printf("Message size: %d\n", msize);
-
 
     char* server_message = (char*)malloc(msize + 1);
     if (!server_message) {
         perror("malloc failed for server_message");
         return;
     }
-    memset(server_message,'\0',msize+1);
+    server_message[0] = '\0'; // initialize malloced string
 
     // Construct the message with delimiters
     // example: ./rfs WRITE data/file.txt remote/file.txt
     // becomes: WRITE, data/file.txt, remote/file.txt
     for(int i = 1; i < argc; i++) {
       strcat(server_message, argv[i]);
-      strcat(server_message, DELIMITER);
-      // account for if there's an omitted file name in the client msg and the argv[]
+    
+        // Only add delimiter if this is NOT the last argument
+        if (i < argc - 1) {
+            strcat(server_message, DELIMITER);
+        }
     }
 
     printf("Client Message: %s\n", server_message);
