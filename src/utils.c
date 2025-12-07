@@ -8,7 +8,7 @@
 
 #include "utils.h"
 
-pthread_mutex_t fs_mutex = PTHREAD_MUTEX_INITIALIZER;  // Filesystem operations mutex
+pthread_mutex_t utils_mutex = PTHREAD_MUTEX_INITIALIZER;  // Filesystem operations mutex
 
 // need to free() result
 char* dyn_msg(unsigned long id, const char* part1, const char* part2) {
@@ -155,7 +155,7 @@ int rm_file_or_folder(socket_md_t* sock) {
     const char* path = sock->first_dirs;
     
     // LOCK: Protect entire filesystem operation
-    pthread_mutex_lock(&fs_mutex);
+    pthread_mutex_lock(&utils_mutex);
     
     struct stat statbuf;
     
@@ -170,7 +170,7 @@ int rm_file_or_folder(socket_md_t* sock) {
             // Change permissions if needed
             if (chmod(filepath, mode) != 0) {
                 perror("Error setting file permissions");
-                pthread_mutex_unlock(&fs_mutex);
+                pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
             
@@ -179,11 +179,11 @@ int rm_file_or_folder(socket_md_t* sock) {
             // Remove the file
             if (remove(filepath) == 0) {
                 printf("File '%s' has been deleted successfully\n", filename);
-                pthread_mutex_unlock(&fs_mutex);
+                pthread_mutex_unlock(&utils_mutex);
                 return 1;
             } else {
                 perror("Error deleting the file");
-                pthread_mutex_unlock(&fs_mutex);
+                pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
         } else if (S_ISDIR(statbuf.st_mode)) {
@@ -193,7 +193,7 @@ int rm_file_or_folder(socket_md_t* sock) {
             mode_t mode = 0755;
             if (chmod(path, mode) != 0) {
                 perror("Error changing directory permissions");
-                pthread_mutex_unlock(&fs_mutex);
+                pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
             
@@ -204,17 +204,17 @@ int rm_file_or_folder(socket_md_t* sock) {
             
             if (rmdir(path) == 0) {
                 printf("Directory '%s' has been removed successfully.\n", path);
-                pthread_mutex_unlock(&fs_mutex);
+                pthread_mutex_unlock(&utils_mutex);
                 return 1;
             } else {
                 if (errno == ENOENT) {
                     // Already deleted by another thread
                     printf("Directory '%s' was already removed.\n", path);
-                    pthread_mutex_unlock(&fs_mutex);
+                    pthread_mutex_unlock(&utils_mutex);
                     return 1;
                 }
                 perror("Error removing the directory");
-                pthread_mutex_unlock(&fs_mutex);
+                pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
         }
@@ -225,11 +225,11 @@ int rm_file_or_folder(socket_md_t* sock) {
         } else {
             perror("Error accessing path");
         }
-        pthread_mutex_unlock(&fs_mutex);
+        pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
     
-    pthread_mutex_unlock(&fs_mutex);
+    pthread_mutex_unlock(&utils_mutex);
     return 1;
 }
 
@@ -263,10 +263,13 @@ void send_file(socket_md_t* sock, int sock_fd) {
         exit(1);
     }
 
+    // Lock the socket mutex to ensure thread-safety when working with the file and socket
+    pthread_mutex_lock(&utils_mutex);
     // printf("Local File path: %s\n", file_path);
     FILE *file = fopen(sock->first_filepath, "rb"); // "rb" for read binary
     if (file == NULL) {
         perror("Error opening read file\n");
+        pthread_mutex_unlock(&utils_mutex);
         free_socket(sock);
         exit(1);
     }
@@ -274,6 +277,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
     // Get the size of the file
     if (fseek(file, 0, SEEK_END) != 0) {
         perror("Error seeking to end of read file\n");
+        pthread_mutex_unlock(&utils_mutex);
         free_socket(sock);
         fclose(file);
         exit(1);
@@ -281,6 +285,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
     long file_size = ftell(file);
     if(file_size < 0) {
         perror("Error getting read file size\n");
+        pthread_mutex_unlock(&utils_mutex);
         free_socket(sock);
         fclose(file);
         exit(1);
@@ -288,6 +293,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
     }
     if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
         perror("Error seeking to start of read file\n");
+        pthread_mutex_unlock(&utils_mutex);
         free_socket(sock);
         fclose(file);
         exit(1);
@@ -297,6 +303,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
     uint32_t size = htonl(file_size);
     if (send(sock_fd, &size, sizeof(size), 0) < 0) {
         perror("Error sending file size\n");
+        pthread_mutex_unlock(&utils_mutex);
         fclose(file);
         free_socket(sock);
         exit(1);
@@ -314,6 +321,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
 
             if (sent < 0) {
                 perror("Unable to send message\n");
+                pthread_mutex_unlock(&utils_mutex);
                 // handle error (disconnect, etc.)
                 break;
             }
@@ -325,8 +333,8 @@ void send_file(socket_md_t* sock, int sock_fd) {
     }
 
     fclose(file);
+    pthread_mutex_unlock(&utils_mutex);
 }
-
 
 int rcv_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
@@ -343,9 +351,13 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
         return -1;
     }
 
+    // Locking the mutex to protect shared resources like socket descriptor and metadata
+    pthread_mutex_lock(&utils_mutex);
+
     uint32_t size;
     if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
         perror("Error receiving file size\n");
+        pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
     size = ntohl(size);
@@ -353,12 +365,14 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
 
     if (size == 0) {
         printf("Received file size is 0. No file to receive.\n");
+        pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
 
     FILE *out_file = fopen(sock->sec_filepath, "wb");
     if (out_file == NULL) {
         perror("Error opening write file\n");
+        pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
 
@@ -372,6 +386,7 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
         if (received < 0) {
             perror("Error receiving data\n");
             fclose(out_file);
+            pthread_mutex_unlock(&utils_mutex);
             return -1;
         } else if (received == 0) {
             // No more data, but the total received doesn't match the expected size
@@ -384,6 +399,7 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
         if (written != received) {
             perror("Error writing to file\n");
             fclose(out_file);
+            pthread_mutex_unlock(&utils_mutex);
             return -1;
         }
 
@@ -393,6 +409,7 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
         if (total_received > size) {
             fprintf(stderr, "Error: More data received than expected\n");
             fclose(out_file);
+            pthread_mutex_unlock(&utils_mutex);
             return -1;
         }
 
@@ -403,6 +420,7 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
     fclose(out_file);
 
     printf("File received successfully!\n");
+    pthread_mutex_unlock(&utils_mutex);
     return received;
 }
 
