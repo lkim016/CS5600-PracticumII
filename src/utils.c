@@ -61,6 +61,7 @@ int folder_not_exists_make(const char* file_path) {
         if (token_count != 0) {
             path[strlen(path)] = SINGLE_PATH_DELIMITER;
         }
+        path[strlen(path)] = '\0';
         // Add the token to the path
         strcat(path, token);
         printf("Checking path: %s\n", path);
