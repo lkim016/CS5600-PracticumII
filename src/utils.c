@@ -46,6 +46,7 @@ int folder_not_exists_make(const char* file_path) {
     }
     path[0] = '\0';
     
+    int token_count = 0;
     char* token = strtok(strdup(dirs), "/");
     while (token != NULL) {
         // Concatenate the token to the current path
@@ -57,7 +58,9 @@ int folder_not_exists_make(const char* file_path) {
             return -1;
         }
         path = temp;
-        path[strlen(path)] = SINGLE_PATH_DELIMITER;
+        if (token_count != 0) {
+            path[strlen(path)] = SINGLE_PATH_DELIMITER;
+        }
         // Add the token to the path
         strcat(path, token);
         printf("Checking path: %s\n", path);
@@ -75,6 +78,7 @@ int folder_not_exists_make(const char* file_path) {
                 if (errno == EEXIST) {
                     // Another thread created it - that's fine!
                     token = strtok(NULL, "/");
+                    token_count++;
                     continue;
                 }
                 printf("Failed to create directory: %s\n", path);
@@ -84,6 +88,7 @@ int folder_not_exists_make(const char* file_path) {
         }
         
         token = strtok(NULL, "/");
+        token_count++;
     }
 
     free(dirs);
