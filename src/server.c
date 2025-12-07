@@ -179,7 +179,6 @@ void set_server_sock_metadata(socket_md_t* sock) {
       return;
     }
     printf("Msg from client: %s\n", client_message);
-    client_message[strlen(client_message)-1] = '\0'; // remove last comma
 
     // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
     const char* first_path = NULL;
