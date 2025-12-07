@@ -74,6 +74,8 @@ void* server_cmd_handler(void* arg) {
               msg = "Warning: File was not received - issues with folder path to write out to\n";
           }
 
+          printf("%s\n", msg);
+
           int sent_status = send_msg(sock->client_sock_fd, msg);
           if (sent_status < 0) {
               perror("Failed to send response to client\n");
@@ -108,6 +110,8 @@ void* server_cmd_handler(void* arg) {
             const char* const_msg = "First filepath is invalid";
             msg = dyn_msg(const_msg, "");
         }
+        
+        printf("%s\n", msg);
 
         if (msg != NULL) {
             if (send_msg(sock->client_sock_fd, msg) < 0) {
@@ -220,7 +224,6 @@ int main(void) {
   }
   
   while(1) { // loop through to have server continue listening until shut down
-    pthread_rwlock_unlock(&socket_mutex);
 
     printf("\nListening for incoming connections on port %d\n", PORT);
     
@@ -269,6 +272,7 @@ int main(void) {
         pthread_rwlock_unlock(&socket_mutex);
         break;  // Exit the thread if server is stopping
     }
+    pthread_rwlock_unlock(&socket_mutex);
   }
 
   close(socket_desc);
