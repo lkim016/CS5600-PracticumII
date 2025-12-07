@@ -179,11 +179,12 @@ void set_server_sock_metadata(socket_md_t* sock) {
       return;
     }
     printf("Msg from client: %s\n", client_message);
+    client_message[strlen(client_message)-1] = '\0'; // remove last comma
 
     // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
     const char* first_path = NULL;
     int token_count = 0;
-    char* token = strtok(client_message, DELIMITER);
+    char* token = strtok(client_message, DELIM);
     while (token != NULL) {
       if (token_count == 0) {
         commands cmd = str_to_cmd_enum(token);
@@ -197,7 +198,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
         set_sec_filepath(sock);
       }
       token_count++;
-      token = strtok(NULL, DELIMITER);
+      token = strtok(NULL, DELIM);
     }
 
     if (sock->sec_filename == NULL) { // if 3 command is omitted

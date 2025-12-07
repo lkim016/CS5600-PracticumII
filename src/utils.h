@@ -43,7 +43,7 @@ int folder_not_exists_make(const char* folder_path);
  * @brief called by RM command to remove a file or folder indicated by first file argument
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
- * @return int - 1 for success, -1 for error, 0 for fail
+ * @return int -> 1 for success, -1 for error, 0 for fail
  */
 int rm_file_or_folder(socket_md_t* sock);
 
@@ -52,7 +52,7 @@ int rm_file_or_folder(socket_md_t* sock);
  *
  * @param sock_fd int - the socket file descriptor that the file data will be sent to
  * @param message const char* - a constant char string that is the message
- * @return int - 1 for success, -1 for error, 0 for fail
+ * @return int -> 1 for success, -1 for error, 0 for fail
  */
 int send_msg(int sock_fd, const char* message);
 
@@ -61,7 +61,7 @@ int send_msg(int sock_fd, const char* message);
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be sent to
- * @return int - 1 for success, -1 for error, 0 for fail
+ * @return int -> 1 for success, -1 for error, 0 for fail
  */
 int send_file(socket_md_t* sock, int sock_fd);
 
@@ -70,7 +70,7 @@ int send_file(socket_md_t* sock, int sock_fd);
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be received by
- * @return int - 1 for success, -1 for error, 0 for fail
+ * @return int -> 1 for success, -1 for error, 0 for fail
  */
 int rcv_file(socket_md_t* sock, int sock_fd);
 

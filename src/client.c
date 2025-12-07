@@ -24,6 +24,7 @@
  * @brief handles the CLI args commands for the client
  *
  * @param socket socket_md_t* - the pointer to the client socket metadata object
+ * @return int -> 1 for success, -1 for error, 0 for fail
  */
 void client_cmd_handler(socket_md_t* sock) {
   if (!sock) {
@@ -95,6 +96,10 @@ void client_cmd_handler(socket_md_t* sock) {
       }
       
       printf("Server's response: %s\n",server_message);
+      int result = atoi(server_message);
+      if (atoi(server_message)) {
+        printf("%d\n", result);
+      }
       break;
     default:
       printf("Unknown command\n");
@@ -155,7 +160,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
       while(command[c] != '\0') {
         server_message[msgi++] = command[c++];
       }
-      server_message[msgi++] = SINGLE_DELIM;
+      server_message[msgi++] = LITERAL_DELIM;
     }
 
     printf("Client Message: %s\n", server_message);
@@ -180,10 +185,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
  */
 int main(int argc, char* argv[]) {
 
-  if (argc < 3 && strcmp(argv[1], "STOP") != 0) { // FIXME: need to set this logic right
-      printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
-      return -1;
-  } else if (argc < 5) {
+  if (((argc > 2 && argc < 5) && (strcmp(argv[1], "WRITE") == 0 || strcmp(argv[1], "GET") == 0 || strcmp(argv[1], "RM") == 0)) || strcmp(argv[1], "STOP") == 0) {
   
     int socket_desc;
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
@@ -231,9 +233,8 @@ int main(int argc, char* argv[]) {
     // Close the socket:
     free_socket(client_metadata);
   } else {
-    printf("Too many arguments\n");
     printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
-    return -1;
+    return 1;
   }
   
   

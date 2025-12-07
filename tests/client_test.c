@@ -19,9 +19,12 @@
  * @param message char* - custom message to display in terminal
  * @return -1 to signal failed execution of the program
  */
-int failed_command(char *message) {
-    printf("ERROR: %s\n", message);
-    return -1;
+void print_check(bool status, char* msg) {
+    if (status) {
+        printf("SUCCESS: %s\n", msg);
+    } else {
+        printf("FAIL: %s\n", msg);
+    }
 }
 
 int main(void) {
@@ -29,18 +32,17 @@ int main(void) {
     // TEST: test the command args in client - 2, 3
     char* msg = "./rfs WRITE";
     int status = system(msg);
-    if (status != 0) {
-        failed_command(msg);
-    }
+    print_check(status == 1, msg);
 
     // TEST: edge case - 5
+    msg = "./rfs WRITE data.txt hello.txt STOP";
+    status = system(msg);
+    print_check(status == 1, msg);
 
     // TEST: test the command args in client - 2, 3
     msg = "./rfs STOP";
     status = system(msg);
-    if (status != 0) {
-        return failed_command(msg);
-    }
+    print_check(status == 0, msg);
 
     return 0;
 }
