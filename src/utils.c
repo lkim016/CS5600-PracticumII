@@ -9,12 +9,16 @@
 #include "utils.h"
 
 // need to free() result
-char* dyn_msg(char* msg_ptr, const char* part1, const char* part2) {
-    msg_ptr = calloc(strlen(part1) + 2 + strlen(part2) + 1, sizeof(char));
+char* dyn_msg(const char* part1, const char* part2) {
+    size_t len = strlen(part1) + strlen(part2) + 3; // 1 for space, 1 for newline, 1 for null terminator
+    char* msg_ptr = calloc(len, sizeof(char));
+    if (msg_ptr == NULL) {
+        perror("Memory allocation failed\n");
+        return NULL;
+    }
     sprintf(msg_ptr, "%s %s\n", part1, part2);
     return msg_ptr;
 }
-
 
 int folder_not_exists_make(const char* file_path) {
     // Find the last occurrence of the directory separator - Copy the directory part
@@ -121,7 +125,7 @@ void remove_directory(const char *path) {
 }
 
 
-int rm_file_or_folder(socket_t* sock) {
+int rm_file_or_folder(socket_md_t* sock) {
     const char* filepath = sock->first_filepath;
     const char* filename = sock->first_filename;
     const char* path = sock->first_dirs;
@@ -192,7 +196,7 @@ int send_msg(int sock_fd, const char* message) {
 }
 
 
-void send_file(socket_t* sock, int sock_fd) {
+void send_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         free_socket(sock);
@@ -278,7 +282,7 @@ void send_file(socket_t* sock, int sock_fd) {
 }
 
 
-int rcv_file(socket_t* sock, int sock_fd) {
+int rcv_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         return -1;

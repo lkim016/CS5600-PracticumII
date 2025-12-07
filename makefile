@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall
-SRC_FILES = src/socket.c src/utils.c
+SRC_FILES = src/socket_md.c src/utils.c
 
 .PHONY: all clean
 

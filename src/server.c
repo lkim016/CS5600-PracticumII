@@ -13,10 +13,27 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <stdbool.h>
 
 #include "config.h"
-#include "socket.h"
+#include "socket_md.h"
 #include "utils.h"
+
+
+pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+char client_message[MSG_SIZE];
+bool stop_server = false;
+
+
+// Function to handle the STOP command
+void handle_stop(const char* exit_msg) {
+    pthread_mutex_lock(&socket_mutex);
+    stop_server = true;  // Set the global stop flag
+    pthread_mutex_unlock(&socket_mutex);
+    printf("%s", exit_msg);
+}
 
 
 /**
@@ -24,13 +41,13 @@
  *
  * @param socket socket_t* - the pointer to the server socket metadata object
  */
-void server_cmd_handles(socket_t* sock) {
+void* server_cmd_handler(void* arg) {
+  socket_md_t* sock = (socket_md_t*)arg;
   if (!sock) {
-        fprintf(stderr, "ERROR: Socket is NULL\n");
-        return;
+      fprintf(stderr, "ERROR: Socket is NULL\n");
+      return;
   }
 
-  char client_message[MSG_SIZE];
   // Clean buffers:
   memset(client_message,'\0',sizeof(client_message));
   char* msg = NULL;
@@ -67,23 +84,23 @@ void server_cmd_handles(socket_t* sock) {
         // if command is RM then check if
         if(rm_file_or_folder(sock) != 1) {
             const char* const_msg = "Failed to remove";
-            msg = dyn_msg(msg, const_msg, rm_obj);
+            msg = dyn_msg(const_msg, rm_obj);
         } else {
             const char* const_msg = "Successfully removed";
-            msg = dyn_msg(msg, const_msg, rm_obj);
+            msg = dyn_msg(const_msg, rm_obj);
         }
 
-        if (send_msg(sock->client_sock_fd, msg) < 0) {
-            perror("Failed to send response to client\n");
+        if (msg != NULL) {
+            if (send_msg(sock->client_sock_fd, msg) < 0) {
+                perror("Failed to send response to client\n");
+            }
+            free(msg); // Free the allocated memory
         }
-        free(msg);
         break;
     case STOP:
         msg = "Exiting Server...\n";
         send_msg(sock->client_sock_fd, msg);
-        printf("%s", msg);
-        free_socket(sock);
-        exit(0);
+        handle_stop(msg);
         break;
     default:
         printf("Unknown command\n");
@@ -92,14 +109,59 @@ void server_cmd_handles(socket_t* sock) {
 }
 
 /**
- * @brief handles the CLI args commands
+ * @brief receives the args message from the Client and distinguishes the CLI args commands into the respective member fields of the socket metadata obj
+ *
+ * @param socket socket_md_t* - the pointer to the client socket metadata object
+ */
+void set_srvr_sock_metadata(socket_md_t* sock) {
+    // Clean buffers:
+    memset(client_message, '\0', sizeof(client_message));
+    // Receive client's message:
+    
+    if (recv(sock->client_sock_fd, client_message, 
+            sizeof(client_message), 0) < 0){
+      printf("Failed to receive message from client\n");
+      close(sock->client_sock_fd);
+      return;
+    }
+    printf("Msg from client: %s\n", client_message);
+
+    // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
+    const char* first_path = NULL;
+    int token_count = 0;
+    char* token = strtok(client_message, DELIMITER);
+    while (token != NULL) {
+      if (token_count == 0) {
+        commands cmd = str_to_cmd_enum(token);
+        set_sock_command(sock, cmd);
+      } else if (token_count == 1) {
+        set_first_fileInfo(token, sock);
+        set_sock_first_filepath(sock);
+        first_path = token;
+      } else if (token_count == 2) {
+        set_sec_fileInfo(token, sock);
+        set_sock_sec_filepath(sock);
+      }
+      token_count++;
+      token = strtok(NULL, DELIMITER);
+    }
+
+    if (sock->sec_filename == NULL) { // if 3 command is omitted
+      set_sec_fileInfo(first_path, sock);
+      set_sock_sec_filepath(sock);
+    }
+
+}
+
+/**
+ * @brief handles the CLI args commands that are pased to it as a message by the client
  *
  * @return int - 0 if success otherwise -1 for error 
  */
 int main(void) {
   // int socket_desc, client_sock;
-  socket_t* server_sck = create_socket();
-  if (!server_sck) {
+  socket_md_t* server_metadata = create_socket_md();
+  if (!server_metadata) {
       printf("Failed to set socket metadata\n");
       return -1;
   }
@@ -107,11 +169,11 @@ int main(void) {
   struct sockaddr_in server_addr, client_addr;
   
   // Create socket:
-  server_sck->server_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+  server_metadata->server_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
   
-  if(server_sck->server_sock_fd < 0){
+  if(server_metadata->server_sock_fd < 0){
     printf("Error while creating socket\n");
-    free_socket(server_sck);
+    free_socket(server_metadata);
     return -1;
   }
   printf("Socket created successfully\n");
@@ -122,90 +184,76 @@ int main(void) {
   server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
   
   // Bind to the set port and IP:
-  if(bind(server_sck->server_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
+  if(bind(server_metadata->server_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
     printf("Couldn't bind to the port\n");
-    free_socket(server_sck);
+    free_socket(server_metadata);
     return -1;
   }
   printf("Done with binding\n");
   
   // Listen for clients:
-  if(listen(server_sck->server_sock_fd, 1) < 0){
+  if(listen(server_metadata->server_sock_fd, SERVER_BACKLOG) < 0){
     printf("Error while listening\n");
-    free_socket(server_sck);
+    free_socket(server_metadata);
     return -1;
   }
   
   while(1) { // loop through to have server continue listening until shut down
-    
+    pthread_mutex_lock(&socket_mutex);
+    if (stop_server) {
+        pthread_mutex_unlock(&socket_mutex);
+        break;  // Exit the thread if server is stopping
+    }
+    pthread_mutex_unlock(&socket_mutex);
+
     printf("\nListening for incoming connections on port %d\n", PORT);
 
     // Accept an incoming connection:
     client_size = sizeof(client_addr);
-    server_sck->client_sock_fd = accept(server_sck->server_sock_fd, (struct sockaddr*)&client_addr, &client_size);
+    server_metadata->client_sock_fd = accept(server_metadata->server_sock_fd, (struct sockaddr*)&client_addr, &client_size);
     
-    if (server_sck->client_sock_fd < 0){
+    if (server_metadata->client_sock_fd < 0){
       printf("Can't accept\n");
-      free_socket(server_sck);
-      return -1;
+      close(server_metadata->client_sock_fd);
+      continue;
     }
     printf("Client connected at IP: %s and port: %i\n", 
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
 
-    //-------------- handle client message
-    char client_message[CHUNK_SIZE];
-    // Clean buffers:
-    memset(client_message, '\0', sizeof(client_message));
-
-    // Receive client's message:
-    // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
-    if (recv(server_sck->client_sock_fd, client_message, 
-            sizeof(client_message), 0) < 0){
-      printf("Failed to receive message from client\n");
-      close(server_sck->client_sock_fd);
-      continue;
-    }
-    printf("Msg from client: %s\n", client_message);
-
-    const char* first_path = NULL;
-    int token_count = 0;
-    char* token = strtok(client_message, DELIMITER);
-    while (token != NULL) {
-      if (token_count == 0) {
-        commands cmd = str_to_cmd_enum(token);
-        set_sock_command(server_sck, cmd);
-      } else if (token_count == 1) {
-        set_first_fileInfo(token, server_sck);
-        set_first_file_ext(server_sck);
-        set_sock_first_filepath(server_sck);
-        first_path = token;
-      } else if (token_count == 2) {
-        set_sec_fileInfo(token, server_sck);
-        set_sec_file_ext(server_sck);
-        set_sock_sec_filepath(server_sck);
-      }
-      token_count++;
-      token = strtok(NULL, DELIMITER);
+    // Inside your main loop
+    socket_md_t* client_md = dup_sock_md(server_metadata);
+    if (!client_md) {
+        printf("Failed to create client socket\n");
+        close(server_metadata->client_sock_fd);
+        continue;
     }
 
-    if (server_sck->sec_filename == NULL) { // if 3 command is omitted
-      set_sec_fileInfo(first_path, server_sck);
-      set_sec_file_ext(server_sck);
-      set_sock_sec_filepath(server_sck);
+    // Set server socket metadata
+    set_srvr_sock_metadata(client_md);
+    
+    printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(client_md->command), client_md->first_filepath, client_md->sec_filepath);
+    print_write_file_info(client_md); // FIXME: maybe delete
+
+    // Create reader and writer threads:
+    pthread_t cmd_handle_tid;
+
+    // cmd hanling thread
+    if (pthread_create(&cmd_handle_tid, NULL, server_cmd_handler, (void*)client_md) != 0) {
+        perror("Failed to create reader thread");
+        close(client_md->client_sock_fd);
+        continue;
     }
 
-    printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_sck->command), server_sck->first_filepath, server_sck->sec_filepath);
-      print_write_file_info(server_sck); // FIXME: maybe delete
+    pthread_detach(cmd_handle_tid); // Detach the thread to manage its own cleanup
 
-    server_cmd_handles(server_sck);
     
     // Closing the socket:
-    close(server_sck->client_sock_fd);
+    free_socket(client_md);
   }
 
   // Clean up server socket
-  free_socket(server_sck);
+  free_socket(server_metadata);
     
   return 0;
 }

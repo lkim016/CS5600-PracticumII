@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 
 #include "config.h"
-#include "socket.h"
+#include "socket_md.h"
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -24,11 +24,10 @@
 /**
  * @brief constructs a message that is concatenated in dynamic memory allocation to be sent over TCP
  *
- * @param msg_ptr char* - the msg pointer to return the dynamic memory allocated string to
  * @param part1 const char* - a constant char string that will make up the first part of the new string
  * @param part2 const char* - a constant char string that will make up the second part of the new string
  */
-char* dyn_msg(char* msg_ptr, const char* part1, const char* part2);
+char* dyn_msg(const char* part1, const char* part2);
 
 /**
  * @brief checks to see if each folder in the path exists, if not then it creates it
@@ -40,10 +39,10 @@ int folder_not_exists_make(const char* folder_path);
 /**
  * @brief called by RM command to remove a file or folder indicated by first file argument
  *
- * @param socket socket_t* - the pointer to the socket metadata object
+ * @param socket socket_md_t* - the pointer to the socket metadata object
  * @return int - 1 for success, -1 for error, 0 for fail
  */
-int rm_file_or_folder(socket_t* sock);
+int rm_file_or_folder(socket_md_t* sock);
 
 /**
  * @brief depending on the command, a TCP socket is sending a message to the other TCP socket either client or message.
@@ -56,17 +55,17 @@ int send_msg(int sock_fd, const char* message);
 /**
  * @brief depending on the command, a TCP socket is being asked to read a file from its local env and then send it to the other TCP socket either client or message.
  *
- * @param socket socket_t* - the pointer to the socket metadata object
+ * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be sent to
  */
-void send_file(socket_t* sock, int sock_fd);
+void send_file(socket_md_t* sock, int sock_fd);
 
 /**
  * @brief depending on the command, a TCP socket is being asked to recevied a read file from the other TCP socket and then write it out to its local env.
  *
- * @param socket socket_t* - the pointer to the socket metadata object
+ * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be received by
  */
-int rcv_file(socket_t* sock, int sock_fd);
+int rcv_file(socket_md_t* sock, int sock_fd);
 
 #endif

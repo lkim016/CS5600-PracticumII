@@ -15,21 +15,24 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "socket.h"
+#include "socket_md.h"
 #include "utils.h"
+
+
+char server_message[MSG_SIZE]; // Declare client message - since its a stream will send as comma-delimited string
+
 
 /**
  * @brief handles the CLI args commands for the client
  *
- * @param socket socket_t* - the pointer to the client socket metadata object
+ * @param socket socket_md_t* - the pointer to the client socket metadata object
  */
-void client_cmd_handles(socket_t* sock) {
+void client_cmd_handler(socket_md_t* sock) {
   if (!sock) {
       fprintf(stderr, "ERROR: Socket is NULL\n");
       return;
   }
   
-  char server_message[MSG_SIZE];
   // Clean buffers:
   memset(server_message,'\0',sizeof(server_message));
   const char* msg = NULL;
@@ -37,6 +40,7 @@ void client_cmd_handles(socket_t* sock) {
   switch (sock->command) {
     case WRITE:
       // send the file to server
+      // 
       send_file(sock, sock->client_sock_fd);
       // Wait for acknowledgment from the other socket before declaring success
       if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
@@ -71,13 +75,6 @@ void client_cmd_handles(socket_t* sock) {
 
         printf("Server's response: %s\n",server_message);
 
-    /*
-    } else if(strcmp(command,  "RM") == 0) {
-      // For GET and RM, no file data is sent
-      if (send_message(socket, client_message, strlen(client_message), NULL, 0) < 0) {
-          printf("Failed to send message\n");
-      }
-    */
       break;
     case STOP:
       // Receive the server's response:
@@ -95,7 +92,54 @@ void client_cmd_handles(socket_t* sock) {
 }
 
 /**
- * @brief initiates a TCP socket client network connection
+ * @brief distinguishes the CLI args commands into the respective member fields of the socket metadata obj
+ *
+ * @param socket socket_md_t* - the pointer to the client socket metadata object
+ * @param argc int - count of arguments input from the CLI
+ * @param argv char* - arguments input from the CLI
+ */
+void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
+  // set members of socket object
+  set_sock_command(sock, str_to_cmd_enum(argv[1]));
+
+  if (argc > 2) { // set first_filepath
+      set_first_fileInfo(argv[2], sock);
+      set_sock_first_filepath(sock);
+  }
+  
+  if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
+      set_sec_fileInfo(argv[3], sock);
+      set_sock_sec_filepath(sock);
+  }
+}
+
+/**
+ * @brief constructs message from the CLI args commands to be sent to the Server and sends
+ *
+ * @param argc int - count of arguments input from the CLI
+ * @param argv char* - arguments input from the CLI
+ */
+void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
+  // Clean buffer:
+    memset(server_message,'\0',sizeof(server_message));
+
+    // Construct the message with delimiters
+    // example: ./rfs WRITE data/file.txt remote/file.txt
+    // becomes: WRITE, data/file.txt, remote/file.txt
+    for(int i = 1; i < argc; i++) {
+      strcat(server_message, argv[i]);
+      strcat(server_message, DELIMITER);
+      // account for if there's an omitted file name in the client msg and the argv[]
+    }
+
+    printf("Client Message: %s\n", server_message);
+    
+    // send client message - this sends the commands
+    send_msg(sock->client_sock_fd, server_message);
+}
+
+/**
+ * @brief initiates a TCP socket client network connection to specified server
  * 
  * @param argc int - count of arguments input from the CLI
  * @param argv char* - arguments input from the CLI
@@ -109,19 +153,19 @@ int main(int argc, char* argv[]) {
   } else if (argc < 5) {
   
     // int socket_desc;
-    socket_t* client_sck = create_socket();
-    if (!client_sck) {
+    socket_md_t* client_metadata = create_socket_md();
+    if (!client_metadata) {
         printf("Failed to set socket metadata\n");
         return -1;
     }
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
     
     // Create socket:
-    client_sck->client_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    client_metadata->client_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     
-    if(client_sck->client_sock_fd < 0){
+    if(client_metadata->client_sock_fd < 0){
       printf("Unable to create socket\n");
-      free_socket(client_sck);
+      free_socket(client_metadata);
       return -1;
     }
     
@@ -133,9 +177,9 @@ int main(int argc, char* argv[]) {
     server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
     
     // Send connection request to server:
-    if(connect(client_sck->client_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
+    if(connect(client_metadata->client_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
       printf("Unable to connect\n");
-      free_socket(client_sck);
+      free_socket(client_metadata);
       return -1;
     }
     printf("Connected with server successfully\n");
@@ -151,49 +195,19 @@ int main(int argc, char* argv[]) {
         printf("Invalid message size\n");
         return -1;
     }
-    
-    // set members of socket object
-    set_sock_command(client_sck, str_to_cmd_enum(argv[1]));
-
-    if (argc > 2) { // set first_filepath
-        set_first_fileInfo(argv[2], client_sck);
-        set_first_file_ext(client_sck);
-        set_sock_first_filepath(client_sck);
-    }
-    
-    if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-        set_sec_fileInfo(argv[3], client_sck);
-        set_sec_file_ext(client_sck);
-        set_sock_sec_filepath(client_sck);
-    }
-
-    print_read_file_info(client_sck); // FIXME: mayeb delete
-    //-----------
-    // Declare client message - since its a stream will send as comma-delimited string
-    char client_message[msg_size];
-    // Clean buffer:
-    memset(client_message,'\0',sizeof(client_message));
-
-    // Construct the message with delimiters
-    // example: ./rfs WRITE data/file.txt remote/file.txt
-    // becomes: WRITE, data/file.txt, remote/file.txt
-    for(int i = 1; i < argc; i++) {
-      strcat(client_message, argv[i]);
-      strcat(client_message, DELIMITER);
-      // account for if there's an omitted file name in the client msg and the argv[]
-    }
-
     printf("Message size: %d\n", msg_size);
-    printf("Client Message: %s\n", client_message);
-    
-    // send client message - this sends the commands
-    send_msg(client_sck->client_sock_fd, client_message);
+    // Set server socket metadata
+    set_client_sock_metadata(client_metadata, argc, argv);
+
+    print_read_file_info(client_metadata); // FIXME: mayeb delete
+    //-----------
+    send_args_message(client_metadata, argc, argv);
     //-----------
 
-    client_cmd_handles(client_sck);
+    client_cmd_handler(client_metadata);
     
     // Close the socket:
-    free_socket(client_sck);
+    free_socket(client_metadata);
   } else {
     printf("Too many arguments\n");
     printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);

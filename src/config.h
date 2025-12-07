@@ -1,5 +1,5 @@
 #ifndef MSG_SIZE
-#define MSG_SIZE 2000
+#define MSG_SIZE 1000
 #endif
 
 #define CHUNK_SIZE 4096
@@ -9,6 +9,8 @@
 #define PORT 8080
 // server address
 #define SERVER_IP "192.168.45.67"
+
+#define SERVER_BACKLOG 100
 
 /*
 #define PORT 5000
