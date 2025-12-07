@@ -21,7 +21,7 @@
 #include "utils.h"
 
 
-pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_rwlock_t socket_mutex = PTHREAD_RWLOCK_INITIALIZER;
 
 bool stop_server = false;
 
@@ -31,9 +31,9 @@ bool stop_server = false;
  * @param exit_msg char* - a const char string that holds the server STOP message
  */
 void handle_stop(const char* exit_msg) {
-    pthread_mutex_lock(&socket_mutex);
+    pthread_rwlock_wrlock(&socket_mutex);
     stop_server = true;  // Set the global stop flag
-    pthread_mutex_unlock(&socket_mutex);
+    pthread_rwlock_unlock(&socket_mutex);
     printf("%s", exit_msg);
 }
 
@@ -50,7 +50,7 @@ void* server_cmd_handler(void* arg) {
   }
 
   pthread_t thread_id = pthread_self();
-  printf("Thread ID: %lu\n", (unsigned long)thread_id);
+  printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
 
   // Clean buffers:
   char client_message[MSG_SIZE];
@@ -58,13 +58,13 @@ void* server_cmd_handler(void* arg) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-        pthread_mutex_lock(&socket_mutex); // Lock the socket for server command exec thread
+        pthread_rwlock_wrlock(&socket_mutex); // Lock the socket for server command exec thread
         int folder_exists = folder_not_exists_make(sock->sec_filepath);
-        pthread_mutex_unlock(&socket_mutex); // Unlock the socket after server command exec thread
+        pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
         if (folder_exists == 0) {
-            pthread_mutex_lock(&socket_mutex); // Lock the socket for server command exec thread
+            pthread_rwlock_wrlock(&socket_mutex); // Lock the socket for server command exec thread
             int rcvd_status = rcv_file(sock, sock->client_sock_fd);
-            pthread_mutex_unlock(&socket_mutex); // Unlock the socket after server command exec thread
+            pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
             if (rcvd_status < 0 ) {
               msg = "Error receiving file\n";
             } else {
@@ -126,6 +126,7 @@ void* server_cmd_handler(void* arg) {
         break;
   }
   
+  printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
   // Clean and Closing the socket:
   free_socket(sock);
   return NULL;
@@ -219,12 +220,12 @@ int main(void) {
   }
   
   while(1) { // loop through to have server continue listening until shut down
-    pthread_mutex_lock(&socket_mutex);
+    pthread_rwlock_rdlock(&socket_mutex);
     if (stop_server) {
-        pthread_mutex_unlock(&socket_mutex);
+        pthread_rwlock_unlock(&socket_mutex);
         break;  // Exit the thread if server is stopping
     }
-    pthread_mutex_unlock(&socket_mutex);
+    pthread_rwlock_unlock(&socket_mutex);
 
     printf("\nListening for incoming connections on port %d\n", PORT);
     

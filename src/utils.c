@@ -322,9 +322,9 @@ int send_file(socket_md_t* sock, int sock_fd) {
 
     fclose(file);
     if (tsent == bytes_read) {
-        return tsent;
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
 
