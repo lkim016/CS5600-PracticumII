@@ -80,7 +80,7 @@ void print_read_file_info(socket_md_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         return;
     }
-    printf("Parent Dir: %s, Filename: %s, File Ext: %s\n", sock->first_dirs, sock->first_filename, sock->first_file_ext);
+    printf("Filepath: %s, Dirs: %s, Filename: %s, File Ext: %s\n", sock->first_filepath, sock->first_dirs, sock->first_filename, sock->first_file_ext);
     return;
 }
 
@@ -89,7 +89,7 @@ void print_write_file_info(socket_md_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         return;
     }
-    printf("Parent Dir: %s, Filename: %s, File Ext: %s\n", sock->sec_dirs, sock->sec_filename, sock->sec_file_ext);
+    printf("Filepath: %s, Dirs: %s, Filename: %s, File Ext: %s\n", sock->sec_filepath, sock->sec_dirs, sock->sec_filename, sock->sec_file_ext);
     return;
 }
 
