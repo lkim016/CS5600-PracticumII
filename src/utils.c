@@ -22,79 +22,90 @@ char* dyn_msg(unsigned long id, const char* part1, const char* part2) {
     return msg_ptr;
 }
 
+
 int folder_not_exists_make(const char* file_path) {
-    // Find the last occurrence of the directory separator - Copy the directory part
-    const char *last_slash = strrchr(file_path, SINGLE_PATH_DELIMITER);
-    size_t dir_len = last_slash - file_path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
-    char* dirs = (char*)calloc(dir_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
-    if (dirs == NULL) {
-        // Handle memory allocation failure if needed
-        perror("calloc failed for first_dirs\n");
-        return -1;
-    }
-    strncpy(dirs, file_path, dir_len);  // Copy the directory part into first_dirs
-    
     if (file_path == NULL) {
         printf("Invalid path!\n");
         return -1; // Invalid path
     }
-    // loop through folder_path with strtok
-    char* path = (char*)calloc(1, sizeof(char));
-    if (path == NULL) {
-        printf("Memory allocation failed!\n");
+
+    // Find the last occurrence of the directory separator - Copy the directory part
+    const char *last_slash = strrchr(file_path, SINGLE_PATH_DELIMITER);
+    if (last_slash == NULL) {
+        printf("Invalid path, no directory separator found.\n");
+        return -1; // Invalid path, no directory separator
+    }
+    
+    size_t dir_len = last_slash - file_path + 1;  // Pointer arithmetic to calculate length of directory part
+    char *dirs = (char *)calloc(dir_len + 1, sizeof(char)); // Allocate memory for directory part
+    if (dirs == NULL) {
+        perror("calloc failed for dirs");
         return -1;
     }
-    path[0] = '\0';
-    
+
+    strncpy(dirs, file_path, dir_len);  // Copy the directory part into dirs
+
+    // Allocate memory for the path and initialize it to an empty string
+    char *path = (char *)calloc(1, sizeof(char));
+    if (path == NULL) {
+        printf("Memory allocation failed for path!\n");
+        free(dirs);
+        return -1;
+    }
+
     int token_count = 0;
-    char* token = strtok(strdup(dirs), "/");
+    char *token = strtok(dirs, "/");  // Tokenize the directory path
     while (token != NULL) {
-        // Concatenate the token to the current path
-        size_t new_size = strlen(path) + strlen(token) + 2; // +2 for '/' and '\0'
-        char* temp = realloc(path, new_size);
+        // Calculate new size for the path (add space for '/' and null terminator)
+        size_t new_size = strlen(path) + strlen(token) + 2;
+        char *temp = realloc(path, new_size);
         if (temp == NULL) {
-            printf("Memory reallocation failed!\n");
+            printf("Memory reallocation failed for path!\n");
             free(path);
+            free(dirs);
             return -1;
         }
         path = temp;
+
+        // Add the directory separator before the token, except for the first token
         if (token_count != 0) {
             path[strlen(path)] = SINGLE_PATH_DELIMITER;
         }
-        path[strlen(path)] = '\0';
-        // Add the token to the path
+
+        // Concatenate the token to the path
         strcat(path, token);
         printf("Checking path: %s\n", path);
 
         // Try to open the directory
         DIR *dir = opendir(path);
-        // If opendir returns NULL, the directory doesn't exist
         if (dir) {
-            // Directory exists, so close the directory and return true
+            // Directory exists, close it
             closedir(dir);
         } else {
             // Directory doesn't exist, create it
             if (mkdir(path, 0755) != 0) {
-                // Check if it failed because directory already exists
                 if (errno == EEXIST) {
-                    // Another thread created it - that's fine!
+                    // Directory already exists (possibly created by another thread or process)
                     token = strtok(NULL, "/");
                     token_count++;
                     continue;
                 }
+                // If mkdir fails for any other reason, print error
                 printf("Failed to create directory: %s\n", path);
                 free(path);
+                free(dirs);
                 return -1;
             }
         }
-        
+
         token = strtok(NULL, "/");
         token_count++;
     }
 
+    // Clean up allocated memory
     free(dirs);
     free(path);
-    return 0;
+    return 0; // Success
 }
 
 /**
