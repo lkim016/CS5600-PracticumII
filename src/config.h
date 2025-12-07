@@ -1,5 +1,5 @@
 #ifndef MSG_SIZE
-#define MSG_SIZE 1000
+#define MSG_SIZE 2000
 #endif
 
 #define CHUNK_SIZE 4096

@@ -38,52 +38,6 @@ void handle_stop(const char* exit_msg) {
 }
 
 /**
- * @brief receives the args message from the Client and distinguishes the CLI args commands into the respective member fields of the socket metadata obj
- *
- * @param socket socket_md_t* - the pointer to the client socket metadata object
- */
-void set_server_sock_metadata(socket_md_t* sock) {
-    // Clean buffers:
-    char client_message[MSG_SIZE];
-    memset(client_message, '\0', sizeof(client_message));
-    // Receive client's message:
-    
-    if (recv(sock->client_sock_fd, client_message, 
-            sizeof(client_message), 0) < 0){
-      printf("Failed to receive message from client\n");
-      close(sock->client_sock_fd);
-      return;
-    }
-    printf("Msg from client: %s\n", client_message);
-
-    // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
-    const char* first_path = NULL;
-    int token_count = 0;
-    char* token = strtok(client_message, DELIMITER);
-    while (token != NULL) {
-      if (token_count == 0) {
-        commands cmd = str_to_cmd_enum(token);
-        set_command(sock, cmd);
-      } else if (token_count == 1) {
-        set_first_fileInfo(token, sock);
-        set_first_filepath(sock);
-        first_path = token;
-      } else if (token_count == 2) {
-        set_sec_fileInfo(token, sock);
-        set_sec_filepath(sock);
-      }
-      token_count++;
-      token = strtok(NULL, DELIMITER);
-    }
-
-    if (sock->sec_filename == NULL) { // if 3 command is omitted
-      set_sec_fileInfo(first_path, sock);
-      set_sec_filepath(sock);
-    }
-
-}
-
-/**
  * @brief handles the CLI args commands for the server
  *
  * @param socket socket_t* - the pointer to the server socket metadata object
@@ -164,6 +118,52 @@ void* server_cmd_handler(void* arg) {
   return NULL;
 }
 
+
+/**
+ * @brief receives the args message from the Client and distinguishes the CLI args commands into the respective member fields of the socket metadata obj
+ *
+ * @param socket socket_md_t* - the pointer to the client socket metadata object
+ */
+void set_server_sock_metadata(socket_md_t* sock) {
+    // Clean buffers:
+    char client_message[MSG_SIZE];
+    memset(client_message, '\0', sizeof(client_message));
+    // Receive client's message:
+    
+    if (recv(sock->client_sock_fd, client_message, 
+            sizeof(client_message), 0) < 0){
+      printf("Failed to receive message from client\n");
+      close(sock->client_sock_fd);
+      return;
+    }
+    printf("Msg from client: %s\n", client_message);
+
+    // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
+    const char* first_path = NULL;
+    int token_count = 0;
+    char* token = strtok(client_message, DELIMITER);
+    while (token != NULL) {
+      if (token_count == 0) {
+        commands cmd = str_to_cmd_enum(token);
+        set_command(sock, cmd);
+      } else if (token_count == 1) {
+        set_first_fileInfo(token, sock);
+        set_first_filepath(sock);
+        first_path = token;
+      } else if (token_count == 2) {
+        set_sec_fileInfo(token, sock);
+        set_sec_filepath(sock);
+      }
+      token_count++;
+      token = strtok(NULL, DELIMITER);
+    }
+
+    if (sock->sec_filename == NULL) { // if 3 command is omitted
+      set_sec_fileInfo(first_path, sock);
+      set_sec_filepath(sock);
+    }
+
+}
 
 /**
  * @brief handles the CLI args commands that are pased to it as a message by the client
