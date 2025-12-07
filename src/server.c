@@ -49,6 +49,9 @@ void* server_cmd_handler(void* arg) {
       return NULL;
   }
 
+  pthread_t thread_id = pthread_self();
+  printf("Thread ID: %lu\n", (unsigned long)thread_id);
+
   // Clean buffers:
   char client_message[MSG_SIZE];
   memset(client_message,'\0',sizeof(client_message));
@@ -79,7 +82,8 @@ void* server_cmd_handler(void* arg) {
         break;
     case GET:
         // send the file to client
-        int send_status = send_file(sock, sock->client_sock_fd);
+        int send_bytes = send_file(sock, sock->client_sock_fd);
+        printf("File Bytes Sent: %d", send_bytes);
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
             perror("Error receiving acknowledgment from server\n");
@@ -104,8 +108,7 @@ void* server_cmd_handler(void* arg) {
             const char* const_msg = "First filepath is invalid";
             msg = dyn_msg(const_msg, "");
         }
-        
-        
+
         if (msg != NULL) {
             if (send_msg(sock->client_sock_fd, msg) < 0) {
                 perror("Failed to send response to client\n");
@@ -254,16 +257,16 @@ int main(void) {
     print_write_file_info(server_metadata); // FIXME: maybe delete
 
     // Create reader and writer threads:
-    pthread_t cmd_handle_tid;
+    pthread_t thread;
 
     // cmd hanling thread
-    if (pthread_create(&cmd_handle_tid, NULL, server_cmd_handler, (void*)server_metadata) != 0) {
+    if (pthread_create(&thread, NULL, server_cmd_handler, (void*)server_metadata) != 0) {
         perror("Failed to create reader thread");
         close(server_metadata->client_sock_fd);
         continue;
     }
 
-    pthread_detach(cmd_handle_tid); // Detach the thread to manage its own cleanup
+    pthread_detach(thread); // Detach the thread to manage its own cleanup
   }
 
   close(socket_desc);
