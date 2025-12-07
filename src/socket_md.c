@@ -8,14 +8,13 @@
 
 #include "socket_md.h"
 
-socket_md_t* create_socket_md(int server_fd, int client_fd) {
+socket_md_t* create_socket_md(int client_fd) {
     socket_md_t* sock = (socket_md_t*) calloc(1, sizeof(socket_md_t));
     if (sock == NULL) {
         fprintf(stderr, "ERROR: dynamic memory was not able to be allocated\n");
-        exit(1);
+        return NULL;
     }
 
-    sock->server_sock_fd = server_fd;
     sock->client_sock_fd = client_fd;
     sock->command = NULL_VAL;
     sock->first_dirs = NULL;
@@ -26,6 +25,16 @@ socket_md_t* create_socket_md(int server_fd, int client_fd) {
     sock->sec_filepath = NULL;
 
     return sock;
+}
+
+void set_server_sock_fd(socket_md_t* sock, int server_fd) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL\n");
+        return;
+    }
+
+    sock->server_sock_fd = server_fd;
+    return;
 }
 
 commands str_to_cmd_enum(const char* str) {
@@ -44,7 +53,6 @@ const char* cmd_enum_to_str(commands cmd) {
     if (cmd == STOP) return "STOP";
     return NULL;
 }
-
 
 void set_command(socket_md_t* sock, commands command) {
     if (sock == NULL) {

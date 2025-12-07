@@ -170,20 +170,15 @@ int main(int argc, char* argv[]) {
       return -1;
   } else if (argc < 5) {
   
-    // int socket_desc;
-    socket_md_t* client_metadata = create_socket_md();
-    if (!client_metadata) {
-        printf("Failed to set socket metadata\n");
-        return -1;
-    }
+    int socket_desc;
     struct sockaddr_in server_addr; // https://thelinuxcode.com/sockaddr-in-structure-usage-c/
     
     // Create socket:
-    client_metadata->client_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     
-    if(client_metadata->client_sock_fd < 0){
+    if(socket_desc < 0){
       printf("Unable to create socket\n");
-      free_socket(client_metadata);
+      close(socket_desc);
       return -1;
     }
     
@@ -195,12 +190,18 @@ int main(int argc, char* argv[]) {
     server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
     
     // Send connection request to server:
-    if(connect(client_metadata->client_sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
+    if(connect(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
       printf("Unable to connect\n");
-      free_socket(client_metadata);
+      close(socket_desc);
       return -1;
     }
     printf("Connected with server successfully\n");
+
+    socket_md_t* client_metadata = create_socket_md(socket_desc);
+    if (!client_metadata) {
+        printf("Failed to create socket metadata\n");
+        return -1;
+    }
 
     send_args_message(client_metadata, argc, argv);
 

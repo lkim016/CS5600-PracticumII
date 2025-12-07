@@ -39,9 +39,18 @@ typedef struct socket_metadata {
 /**
  * @brief create and initialize a socket metadata object on the heap.
  *
+ * @param client_fd int - the client socket file descriptor
  * @return socket_md_t* - return the initialized socket metadata object
  */
-socket_md_t* create_socket_md();
+socket_md_t* create_socket_md(int client_fd);
+
+/**
+ * @brief sets the socket metadata object's server socket file descriptor.
+ *
+ * @param client_fd int - the client socket file descriptor
+ * @param socket_md_t* - the socket metadata object
+ */
+void set_server_sock_fd(socket_md_t* sock, int server_fd);
 
 /**
  * @brief converts a string type command to an enum type.
@@ -60,7 +69,7 @@ commands str_to_cmd_enum(const char* str);
 const char* cmd_enum_to_str(commands cmd);
 
 /**
- * @brief initializes the socket metadata object command member.
+ * @brief sets the socket metadata object command member.
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param command commands - the enum type command
@@ -82,14 +91,14 @@ void print_read_file_info(socket_md_t* sock);
 void print_write_file_info(socket_md_t* sock);
 
 /**
- * @brief initializes the socket metadata object read file's filepath member.
+ * @brief sets the socket metadata object read file's filepath member.
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  */
 void set_first_filepath(socket_md_t* sock);
 
 /**
- * @brief initializes the socket metadata object write file's filepath member.
+ * @brief sets the socket metadata object write file's filepath member.
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  */

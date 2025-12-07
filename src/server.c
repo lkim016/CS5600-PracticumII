@@ -172,7 +172,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
  * @return int - 0 if success otherwise -1 for error 
  */
 int main(void) {
-  int socket_desc;
+  int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
   
@@ -215,7 +215,6 @@ int main(void) {
     pthread_mutex_unlock(&socket_mutex);
 
     printf("\nListening for incoming connections on port %d\n", PORT);
-    int client_sock;
     
     // Accept an incoming connection:
     client_size = sizeof(client_addr);
@@ -226,11 +225,13 @@ int main(void) {
       continue;
     }
     // create a new socket metadata for every client connection
-    socket_md_t* server_metadata = create_socket_md(socket_desc, client_sock);
+    socket_md_t* server_metadata = create_socket_md(client_sock);
     if (!server_metadata) {
-      printf("Failed to set socket metadata\n");
-      return -1;
+      printf("Failed to create socket metadata\n");
+      continue;
     }
+
+    set_server_sock_fd(server_metadata, socket_desc);
 
     printf("Client connected at IP: %s and port: %i\n", 
           inet_ntoa(client_addr.sin_addr), 
