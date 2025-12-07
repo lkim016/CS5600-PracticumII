@@ -59,7 +59,10 @@ void* server_cmd_handler(void* arg) {
         int folder_exists = folder_not_exists_make(sock->sec_filepath);
         pthread_mutex_unlock(&socket_mutex); // Unlock the socket after server command exec thread
         if (folder_exists == 0) {
-            if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
+            pthread_mutex_lock(&socket_mutex); // Lock the socket for server command exec thread
+            int rcvd_status = rcv_file(sock, sock->client_sock_fd);
+            pthread_mutex_unlock(&socket_mutex); // Unlock the socket after server command exec thread
+            if (rcvd_status < 0 ) {
               msg = "Error receiving file\n";
             } else {
               msg = "File sent successfully!\n";
