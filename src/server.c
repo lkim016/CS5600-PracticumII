@@ -133,9 +133,7 @@ void* server_cmd_handler(void* arg) {
     case RM:
         const char* rm_obj = sock->first_filepath;
         // need to lock here since this is modifying a folder or file
-        pthread_mutex_lock(&socket_mutex);
         int rm_status = rm_file_or_folder(sock);
-        pthread_mutex_unlock(&socket_mutex);
         if(rm_status != 1) {
             const char* const_msg = "Failed to remove";
             msg = dyn_msg(const_msg, rm_obj);

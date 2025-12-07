@@ -8,6 +8,8 @@
 
 #include "utils.h"
 
+pthread_mutex_t fs_mutex = PTHREAD_MUTEX_INITIALIZER;  // Filesystem operations mutex
+
 // need to free() result
 char* dyn_msg(const char* part1, const char* part2) {
     size_t len = strlen(part1) + strlen(part2) + 3; // 1 for space, 1 for newline, 1 for null terminator
@@ -98,7 +100,11 @@ void remove_directory(const char *path) {
     struct dirent *entry;
     char fullPath[512];
 
+    // Directory might have been deleted by another thread
     if (dir == NULL) {
+        if (errno == ENOENT) {
+            return; // Already deleted, not an error
+        }
         perror("Error opening directory");
         return;
     }
@@ -118,11 +124,18 @@ void remove_directory(const char *path) {
             if (S_ISDIR(statbuf.st_mode)) {
                 // If it's a directory, recursively remove its contents
                 remove_directory(fullPath);
-                rmdir(fullPath);  // Remove the empty subdirectory after deleting its contents
+                if (rmdir(fullPath) != 0 && errno != ENOENT) {
+                    perror("Error removing subdirectory");
+                }
             } else {
                 // If it's a file, remove it
-                remove(fullPath);
+                if (remove(fullPath) != 0 && errno != ENOENT) {
+                    perror("Error removing file");
+                }
             }
+        } else if (errno != ENOENT) {
+            // stat failed for reason other than file not existing
+            perror("Error stat'ing file");
         }
     }
 
@@ -134,58 +147,83 @@ int rm_file_or_folder(socket_md_t* sock) {
     const char* filepath = sock->first_filepath;
     const char* filename = sock->first_filename;
     const char* path = sock->first_dirs;
-    FILE *file = fopen(filepath, "r");  // Try to open the file in read mode
-
-    if (file) {
-        printf("File '%s' exists\n", filename);
-        fclose(file);  // Close the file after checking
-
-        mode_t mode = 0755; // Full permissions for the owner, read and execute for others.
-        // Set the directory permissions
-        if (chmod(path, mode) == 0) {
-            printf("Directory permissions changed to '%o'\n", mode);
-        } else {
-            perror("Error changing directory permissions");
-            return -1;
-        }
-
-        if(chmod(filepath, mode) == 0) {
-            printf("Permissions set to '%o' for '%s'\n", mode, filename);
-            // Remove the file
-
-            if (remove(filepath) == 0) {
-                printf("File '%s' has been deleted successfully\n", filename);
-                return 0;
-            } else {
-                perror("Error deleting the file\n");
+    
+    // LOCK: Protect entire filesystem operation
+    pthread_mutex_lock(&fs_mutex);
+    
+    struct stat statbuf;
+    
+    // Check if path exists and determine if it's a file or directory
+    if (stat(filepath, &statbuf) == 0) {
+        if (S_ISREG(statbuf.st_mode)) {
+            // It's a regular file
+            printf("File '%s' exists\n", filename);
+            
+            mode_t mode = 0755;
+            
+            // Change permissions if needed
+            if (chmod(filepath, mode) != 0) {
+                perror("Error setting file permissions");
+                pthread_mutex_unlock(&fs_mutex);
                 return -1;
             }
-        } else {
-            perror("Error setting file permissions\n");
-            return -1;
+            
+            printf("Permissions set to '%o' for '%s'\n", mode, filename);
+            
+            // Remove the file
+            if (remove(filepath) == 0) {
+                printf("File '%s' has been deleted successfully\n", filename);
+                pthread_mutex_unlock(&fs_mutex);
+                return 1;
+            } else {
+                perror("Error deleting the file");
+                pthread_mutex_unlock(&fs_mutex);
+                return -1;
+            }
+        } else if (S_ISDIR(statbuf.st_mode)) {
+            // It's a directory
+            printf("Directory '%s' exists.\n", path);
+            
+            mode_t mode = 0755;
+            if (chmod(path, mode) != 0) {
+                perror("Error changing directory permissions");
+                pthread_mutex_unlock(&fs_mutex);
+                return -1;
+            }
+            
+            printf("Directory permissions changed to '%o'\n", mode);
+            
+            // Remove directory and contents
+            remove_directory(path);
+            
+            if (rmdir(path) == 0) {
+                printf("Directory '%s' has been removed successfully.\n", path);
+                pthread_mutex_unlock(&fs_mutex);
+                return 1;
+            } else {
+                if (errno == ENOENT) {
+                    // Already deleted by another thread
+                    printf("Directory '%s' was already removed.\n", path);
+                    pthread_mutex_unlock(&fs_mutex);
+                    return 1;
+                }
+                perror("Error removing the directory");
+                pthread_mutex_unlock(&fs_mutex);
+                return -1;
+            }
         }
     } else {
-        printf("File '%s' does not exist\n", filename);
-        // Try to open the directory
-        DIR *dir = opendir(path);
-        if (dir) {
-            printf("Directory '%s' exists.\n", path);
-            closedir(dir);  // Close the directory when done
-
-            remove_directory(path);
-
-            if (rmdir(path) == 0) {  // Finally, remove the empty directory
-                printf("Directory '%s' has been removed successfully.\n", path);
-            } else {
-                perror("Error removing the directory\n");
-            }
-            return 1;
+        // stat failed
+        if (errno == ENOENT) {
+            printf("Path '%s' does not exist\n", filepath);
         } else {
-            printf("Directory '%s' does not exist or cannot be opened\n", path);
-            return -1;
+            perror("Error accessing path");
         }
+        pthread_mutex_unlock(&fs_mutex);
+        return -1;
     }
-
+    
+    pthread_mutex_unlock(&fs_mutex);
     return 1;
 }
 
