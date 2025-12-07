@@ -62,7 +62,9 @@ void* server_cmd_handler(void* arg) {
         int folder_exists = folder_not_exists_make(sock->sec_filepath);
         pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
         if (folder_exists == 0) {
-            pthread_rwlock_wrlock(&socket_mutex); // Lock the socket for server command exec thread
+            // if folder does not exist make if it does then check if file exists
+            // if it does then need to get file and rename it to a timestamped version
+            pthread_rwlock_rdlock(&socket_mutex); // Lock the socket for server command exec thread
             int rcvd_status = rcv_file(sock, sock->client_sock_fd);
             pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
             if (rcvd_status < 0 ) {
@@ -75,8 +77,9 @@ void* server_cmd_handler(void* arg) {
           }
 
           printf("%s\n", msg);
-
+          pthread_rwlock_wrlock(&socket_mutex);
           int sent_status = send_msg(sock->client_sock_fd, msg);
+          pthread_rwlock_unlock(&socket_mutex); // Unlock
           if (sent_status < 0) {
               perror("Failed to send response to client\n");
           }
@@ -85,10 +88,10 @@ void* server_cmd_handler(void* arg) {
     case GET:
         // send the file to client
         send_file(sock, sock->client_sock_fd);
-        
+
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
-            perror("Error receiving acknowledgment from server\n");
+            perror("Error receiving acknowledgment from client\n");
             return NULL;
         }
         
