@@ -50,6 +50,7 @@ void* server_cmd_handler(void* arg) {
   }
 
   pthread_t thread_id = pthread_self();
+  set_thread_id(sock, (unsigned long)thread_id);
   printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
 
   // Clean buffers:
@@ -68,7 +69,7 @@ void* server_cmd_handler(void* arg) {
             int rcvd_status = rcv_file(sock, sock->client_sock_fd);
             pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
             if (rcvd_status < 0 ) {
-              msg = "Error receiving file\n";
+              msg = dyn_msg(sock->thread_id, "Error receiving file", "");
             } else {
               msg = "File sent successfully!\n";
             }
@@ -82,6 +83,10 @@ void* server_cmd_handler(void* arg) {
           pthread_rwlock_unlock(&socket_mutex); // Unlock
           if (sent_status < 0) {
               perror("Failed to send response to client\n");
+          }
+
+          if (msg != NULL) {
+            free(msg);
           }
 
         break;
@@ -104,14 +109,14 @@ void* server_cmd_handler(void* arg) {
           int rm_status = rm_file_or_folder(sock);
           if(rm_status != 1) {
               const char* const_msg = "Failed to remove";
-              msg = dyn_msg(const_msg, rm_item);
+              msg = dyn_msg(sock->thread_id, const_msg, rm_item);
           } else {
               const char* const_msg = "Successfully removed";
-              msg = dyn_msg(const_msg, rm_item);
+              msg = dyn_msg(sock->thread_id, const_msg, rm_item);
           }
         } else {
             const char* const_msg = "First filepath is invalid";
-            msg = dyn_msg(const_msg, "");
+            msg = dyn_msg(sock->thread_id, const_msg, "");
         }
         
         printf("%s\n", msg);

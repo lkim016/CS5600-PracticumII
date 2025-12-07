@@ -37,6 +37,16 @@ void set_server_sock_fd(socket_md_t* sock, int server_fd) {
     return;
 }
 
+void set_thread_id(socket_md_t* sock, unsigned long id) {
+    if (sock == NULL) {
+        fprintf(stderr, "ERROR: socket is NULL\n");
+        return;
+    }
+
+    sock->thread_id = id;
+    return;
+}
+
 commands str_to_cmd_enum(const char* str) {
     if (strcmp(str, "WRITE") == 0) return WRITE;
     if (strcmp(str, "GET") == 0) return GET;

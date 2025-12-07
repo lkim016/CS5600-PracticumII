@@ -30,7 +30,7 @@
  * @param part1 const char* - a constant char string that will make up the first part of the new string
  * @param part2 const char* - a constant char string that will make up the second part of the new string
  */
-char* dyn_msg(const char* part1, const char* part2);
+char* dyn_msg(unsigned long id, const char* part1, const char* part2);
 
 /**
  * @brief checks to see if each folder in the path exists, if not then it creates it

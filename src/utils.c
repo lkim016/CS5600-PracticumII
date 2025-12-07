@@ -11,14 +11,14 @@
 pthread_mutex_t fs_mutex = PTHREAD_MUTEX_INITIALIZER;  // Filesystem operations mutex
 
 // need to free() result
-char* dyn_msg(const char* part1, const char* part2) {
+char* dyn_msg(unsigned long id, const char* part1, const char* part2) {
     size_t len = strlen(part1) + strlen(part2) + 3; // 1 for space, 1 for newline, 1 for null terminator
     char* msg_ptr = calloc(len, sizeof(char));
     if (msg_ptr == NULL) {
         perror("Memory allocation failed\n");
         return NULL;
     }
-    sprintf(msg_ptr, "%s %s\n", part1, part2);
+    sprintf(msg_ptr, "%lu: %s %s\n", id, part1, part2);
     return msg_ptr;
 }
 
