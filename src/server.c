@@ -75,14 +75,13 @@ void* server_cmd_handler(void* arg) {
           } else {
               msg = dyn_msg(sock->thread_id, "Warning: File was not received. Issue with folder path to write out to.", "");
           }
+          pthread_mutex_unlock(&file_mutex);  // Lock filesystem
 
           printf("%s\n", msg);
           if (send_msg(sock->client_sock_fd, msg) < 0) {
               perror("Failed to send response to client\n");
           }
-          pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-          // Add delay to ensure client receives
-          usleep(10000);  // 10ms delay
+          // Add delay to ensure client 
 
           if (msg != NULL) {
             free(msg);
@@ -129,8 +128,8 @@ void* server_cmd_handler(void* arg) {
                 perror("Failed to send response to client\n");
             }
 
-            // Add delay to ensure client receives
-            usleep(10000);  // 10ms delay
+            // // Add delay to ensure client receives
+            // usleep(10000);  // 10ms delay
 
             free(msg); // Free the allocated memory
         }
