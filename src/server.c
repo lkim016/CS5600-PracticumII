@@ -54,6 +54,11 @@ void* server_cmd_handler(void* arg) {
   printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
 
   print_write_file_info(sock); // FIXME: maybe delete
+  // Clean buffers:
+  char client_message[MSG_SIZE];
+  memset(client_message,'\0',sizeof(client_message));
+  char* msg = NULL;
+  
   
   printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
 
