@@ -135,15 +135,10 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     int msize = 0;
     // Calculate message length when combined by delimiters - command,filename,file_size,remote_filename
     for(int i = 1; i < argc; i++) {
-      msize += strlen(argv[i]); // Adding 1 for the delimiter/comma
+      msize += strlen(argv[i]) + strlen(DELIMITER); // Adding 1 for the delimiter/comma
     }
 
-    // Add delimiter lengths (only between arguments, not after last)
-    if (argc > 2) {
-        msize += (argc - 2) * strlen(DELIMITER);
-    }
-
-    char* server_message = (char*)malloc(msize + 1);
+    char* server_message = (char*)malloc(msize + 1); // +1 for null terminator
     if (!server_message) {
         perror("malloc failed for server_message");
         return;
@@ -154,12 +149,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     // example: ./rfs WRITE data/file.txt remote/file.txt
     // becomes: WRITE, data/file.txt, remote/file.txt
     for(int i = 1; i < argc; i++) {
-      strcat(server_message, argv[i]);
-    
-        // Only add delimiter if this is NOT the last argument
-        if (i < argc - 1) {
-            strcat(server_message, DELIMITER);
-        }
+      snprintf(server_message, strlen(argv[i]) + 1, "%s%s", argv[i], DELIMITER);
     }
 
     printf("Client Message: %s\n", server_message);
@@ -168,7 +158,9 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     int sent_size = send_msg(sock->client_sock_fd, server_message);
     if (sent_size > 0) {
       printf("Message of size %d successfully sent\n", sent_size);
-    }
+    } else {
+      perror("Failed to send message");
+  }
     // printf("Sent size: %d\n", sent_size);
     free(server_message);
 }
