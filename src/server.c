@@ -154,6 +154,8 @@ void* server_cmd_handler(void* arg) {
   
   printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
 
+  // Clean and Closing the socket:
+  free_socket(sock);
   return NULL;
 }
 
@@ -293,7 +295,6 @@ int main(void) {
     }
 
     pthread_detach(thread); // Detach the thread to manage its own cleanup
-    // Clean and Closing the socket:
     free(server_metadata);
 
   }
