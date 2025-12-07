@@ -237,6 +237,11 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
         exit(1);
     }
     // Find the last occurrence of the directory separator
+    if (path == NULL) {
+        sock->sec_dirs = strdup(sock->first_dirs);
+        sock->sec_filename = strdup(sock->first_filename);
+        return;
+    }
     const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
     const char *last_dot = strrchr(path, '.');  // Find the last period in the filename
     if (last_slash != NULL) {
