@@ -89,6 +89,9 @@ void* server_cmd_handler(void* arg) {
         printf("Client's response: %s\n", client_message);
         break;
     case RM:
+        if (sock->first_filepath == NULL) {
+          break;
+        }
         const char* rm_obj = sock->first_filepath;
         // need to lock here since this is modifying a folder or file
         int rm_status = rm_file_or_folder(sock);
