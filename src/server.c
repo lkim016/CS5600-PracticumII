@@ -143,6 +143,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
+      printf("%s\n", token);
       if (token_count == 0) {
         commands cmd = str_to_cmd_enum(token);
         set_command(sock, cmd);
@@ -158,7 +159,6 @@ void set_server_sock_metadata(socket_md_t* sock) {
       token = strtok(NULL, DELIMITER);
     }
 
-    printf("Msg from client: %s\n", client_message);
     if (sock->sec_filename == NULL) { // if 3 command is omitted
       set_sec_fileInfo(first_path, sock);
       set_sec_filepath(sock);
