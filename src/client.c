@@ -50,8 +50,8 @@ void client_cmd_handler(socket_md_t* sock) {
       printf("Server's response: %s\n",server_message);
       break;
     case GET:
-
-      if (folder_not_exists_make(sock->sec_filepath) == 1) {
+      int folder_exists = folder_not_exists_make(sock->sec_filepath);
+      if (folder_exists == 0) {
           if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
             msg = "Error receiving file\n";
           } else {
