@@ -158,6 +158,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
       token = strtok(NULL, DELIMITER);
     }
 
+    printf("Msg from client: %s\n", client_message);
     if (sock->sec_filename == NULL) { // if 3 command is omitted
       set_sec_fileInfo(first_path, sock);
       set_sec_filepath(sock);

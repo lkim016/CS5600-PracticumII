@@ -120,7 +120,21 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
  * @param argv char* - arguments input from the CLI
  */
 void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
-    char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
+    //-------------- construct client message
+    int msize = 0;
+    // Calculate message length when combined by delimiters - command,filename,file_size,remote_filename
+    for(int i = 1; i < argc; i++) {
+      msize += strlen(argv[i]) + 1; // Adding 1 for the delimiter/comma
+    }
+
+    if (msize < 1) {
+        printf("Invalid message size\n");
+        return;
+    }
+    printf("Message size: %d\n", msize);
+
+
+    char server_message[msize]; // Declare server message - since its a stream will send as comma-delimited string
     // Clean buffer:
     memset(server_message,'\0',sizeof(server_message));
 
@@ -136,7 +150,11 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     printf("Client Message: %s\n", server_message);
     
     // send client message - this sends the commands
-    send_msg(sock->client_sock_fd, server_message);
+    int sent_size = send_msg(sock->client_sock_fd, server_message);
+    if (sent_size > 0) {
+      printf("Message of size %d successfully sent\n", sent_size);
+    }
+    // printf("Sent size: %d\n", sent_size);
 }
 
 /**
@@ -184,26 +202,14 @@ int main(int argc, char* argv[]) {
       return -1;
     }
     printf("Connected with server successfully\n");
-    
-    //-------------- construct client message
-    int msg_size = 0;
-    // Calculate message length when combined by delimiters - command,filename,file_size,remote_filename
-    for(int i = 1; i < argc; i++) {
-      msg_size += strlen(argv[i]) + 1; // Adding 1 for the delimiter/comma
-    }
 
-    if (msg_size < 1) {
-        printf("Invalid message size\n");
-        return -1;
-    }
-    printf("Message size: %d\n", msg_size);
+    send_args_message(client_metadata, argc, argv);
+
     // Set server socket metadata
     set_client_sock_metadata(client_metadata, argc, argv);
 
     print_read_file_info(client_metadata); // FIXME: mayeb delete
-    //-----------
-    send_args_message(client_metadata, argc, argv);
-    //-----------
+    
 
     client_cmd_handler(client_metadata);
     
