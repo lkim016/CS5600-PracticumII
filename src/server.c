@@ -65,7 +65,6 @@ void* server_cmd_handler(void* arg) {
         if (folder_exists == 0) {
             // if folder does not exist make if it does then check if file exists
             // if it does then need to get file and rename it to a timestamped version
-            
             int rcvd_status = rcv_file(sock, sock->client_sock_fd);
             
             if (rcvd_status < 0 ) {

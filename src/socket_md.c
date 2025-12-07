@@ -236,12 +236,13 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         exit(1);
     }
-    // Find the last occurrence of the directory separator
+    // if sec file path info is missing from command then make from first file path info
     if (path == NULL) {
         sock->sec_dirs = strdup(sock->first_dirs);
         sock->sec_filename = strdup(sock->first_filename);
         return;
     }
+    // Find the last occurrence of the directory separator
     const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
     const char *last_dot = strrchr(path, '.');  // Find the last period in the filename
     if (last_slash != NULL) {

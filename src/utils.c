@@ -247,20 +247,16 @@ int send_msg(int sock_fd, const char* message) {
 
 void send_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL\n");
-        free_socket(sock);
-        exit(1);
+        fprintf(stderr, "WARNING: file send - socket is NULL\n");
+        return;
     }
     if (sock->first_filepath == NULL) {
-        fprintf(stderr, "ERROR: read filename is NULL\n");
-        free_socket(sock);
-        exit(1);
-
+        fprintf(stderr, "WARNING: file send - read filename is NULL\n");
+        return;
     }
     if (sock_fd < 0) {
-        fprintf(stderr, "ERROR: socket file descriptor is invalid\n");
-        free_socket(sock);
-        exit(1);
+        fprintf(stderr, "WARNING: file send - socket file descriptor is invalid\n");
+        return;
     }
 
     // Lock the socket mutex to ensure thread-safety when working with the file and socket
@@ -268,45 +264,39 @@ void send_file(socket_md_t* sock, int sock_fd) {
     // printf("Local File path: %s\n", file_path);
     FILE *file = fopen(sock->first_filepath, "rb"); // "rb" for read binary
     if (file == NULL) {
-        perror("Error opening read file\n");
+        fprintf(stderr, "WARNING: file send - issue opening read file\n");
         pthread_mutex_unlock(&utils_mutex);
-        free_socket(sock);
-        exit(1);
+        return;
     }
 
     // Get the size of the file
     if (fseek(file, 0, SEEK_END) != 0) {
-        perror("Error seeking to end of read file\n");
+        fprintf(stderr, "WARNING: file send - seeking to end of read file\n");
         pthread_mutex_unlock(&utils_mutex);
-        free_socket(sock);
         fclose(file);
-        exit(1);
+        return;
     }
     long file_size = ftell(file);
     if(file_size < 0) {
-        perror("Error getting read file size\n");
+        fprintf(stderr, "WARNING: file send - getting read file size\n");
         pthread_mutex_unlock(&utils_mutex);
-        free_socket(sock);
         fclose(file);
-        exit(1);
-
+        return;
     }
     if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
-        perror("Error seeking to start of read file\n");
+        fprintf(stderr, "WARNING: file send - seeking to start of read file\n");
         pthread_mutex_unlock(&utils_mutex);
-        free_socket(sock);
         fclose(file);
-        exit(1);
+        return;
     }
     
     // send the file size
     uint32_t size = htonl(file_size);
     if (send(sock_fd, &size, sizeof(size), 0) < 0) {
-        perror("Error sending file size\n");
+        fprintf(stderr, "WARNING: file send - sending file size\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
-        free_socket(sock);
-        exit(1);
+        return;
     }
 
     // send the file data
@@ -320,7 +310,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
                                 bytes_read - total_sent, 0);
 
             if (sent < 0) {
-                perror("Unable to send message\n");
+                fprintf(stderr, "WARNING: file send - Unable to send message\n");
                 pthread_mutex_unlock(&utils_mutex);
                 // handle error (disconnect, etc.)
                 break;
