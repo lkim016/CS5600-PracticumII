@@ -114,12 +114,12 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
   set_command(sock, str_to_cmd_enum(argv[1]));
 
   if (argc > 2) { // set first_filepath
-      set_first_fileInfo(argv[2], sock);
+      set_first_fileInfo(strdup(argv[2]), sock);
       set_first_filepath(sock);
   }
   
   if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-      set_sec_fileInfo(argv[3], sock);
+      set_sec_fileInfo(strdup(argv[3]), sock);
       set_sec_filepath(sock);
   }
 }
@@ -145,9 +145,12 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     printf("Message size: %d\n", msize);
 
 
-    char server_message[msize]; // Declare server message - since its a stream will send as comma-delimited string
-    // Clean buffer:
-    memset(server_message,'\0',sizeof(server_message));
+    char* server_message = (char*)malloc(msize + 1);
+    if (!server_message) {
+        perror("malloc failed for server_message");
+        return;
+    }
+    memset(server_message,'\0',msize+1);
 
     // Construct the message with delimiters
     // example: ./rfs WRITE data/file.txt remote/file.txt
@@ -166,6 +169,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
       printf("Message of size %d successfully sent\n", sent_size);
     }
     // printf("Sent size: %d\n", sent_size);
+    free(server_message);
 }
 
 /**
@@ -177,7 +181,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
  */
 int main(int argc, char* argv[]) {
 
-  if (argc < 3 && strcmp(argv[1], "STOP") != 0) {
+  if (argc < 3 && strcmp(argv[1], "STOP") != 0) { // FIXME: need to set this logic right
       printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
       return -1;
   } else if (argc < 5) {

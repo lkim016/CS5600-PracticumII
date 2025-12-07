@@ -29,12 +29,12 @@ typedef struct socket_metadata {
     commands command; // execution commands from the program CLI args
     char *first_dirs; // parent dir of the file being read
     char *first_filename; // filename of the file being read
-    char *first_filepath; // filepath of the file being read
     char *first_file_ext; // file extension of the file being read
+    char *first_filepath; // filepath of the file being read
     char *sec_dirs; // parent dir of the file being written
     char *sec_filename; // filename of the file being written
-    char *sec_filepath; // filepath of the file being written
     char *sec_file_ext; // file extension of the file being written
+    char *sec_filepath; // filepath of the file being written
 } socket_md_t;
 
 /**
