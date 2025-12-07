@@ -42,8 +42,12 @@ void client_cmd_handler(socket_md_t* sock) {
       send_file(sock, sock->client_sock_fd);
 
       // Wait for acknowledgment from the other socket before declaring success
-      if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+      ssize_t recv_bytes = recv(sock->client_sock_fd, server_message, sizeof(server_message), 0);
+      if (recv_bytes < 0) {
           perror("Error receiving acknowledgment from server");
+          return;
+      } else if (recv_bytes == 0) {
+          printf("Server closed connection\n");
           return;
       }
 
@@ -68,8 +72,12 @@ void client_cmd_handler(socket_md_t* sock) {
         break;
     case RM:
         // Wait for acknowledgment from the other socket before declaring success
-        if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
+        ssize_t rm_recv = recv(sock->client_sock_fd, server_message, sizeof(server_message), 0);
+        if (rm_recv < 0) {
             perror("Error receiving acknowledgment from server");
+            return;
+        } else if (rm_recv == 0) {
+            printf("Server closed connection\n");
             return;
         }
 

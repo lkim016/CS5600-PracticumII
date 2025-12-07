@@ -78,10 +78,11 @@ void* server_cmd_handler(void* arg) {
           pthread_mutex_unlock(&file_mutex);  // Lock filesystem
 
           printf("%s\n", msg);
-          int sent_status = send_msg(sock->client_sock_fd, msg);
-          if (sent_status < 0) {
+          if (send_msg(sock->client_sock_fd, msg) < 0) {
               perror("Failed to send response to client\n");
           }
+          // Add delay to ensure client receives
+          usleep(10000);  // 10ms delay
 
           if (msg != NULL) {
             free(msg);
@@ -127,12 +128,20 @@ void* server_cmd_handler(void* arg) {
             if (send_msg(sock->client_sock_fd, msg) < 0) {
                 perror("Failed to send response to client\n");
             }
+
+            // Add delay to ensure client receives
+            usleep(10000);  // 10ms delay
+
             free(msg); // Free the allocated memory
         }
         break;
     case STOP:
         msg = "Exiting Server...\n";
         send_msg(sock->client_sock_fd, msg);
+
+        // Add delay to ensure client receives
+        usleep(10000);  // 10ms delay
+
         handle_stop(msg);
         break;
     default:
@@ -141,6 +150,11 @@ void* server_cmd_handler(void* arg) {
   }
   
   printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
+
+  // Gracefully shutdown
+  shutdown(sock->client_sock_fd, SHUT_RDWR);
+  usleep(5000);
+
   // Clean and Closing the socket:
   free_socket(sock);
   return NULL;
