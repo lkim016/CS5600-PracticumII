@@ -259,8 +259,9 @@ int main(void) {
     }
 
     pthread_detach(cmd_handle_tid); // Detach the thread to manage its own cleanup
-    
   }
+
+  close(socket_desc);
     
   return 0;
 }
