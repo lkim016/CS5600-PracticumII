@@ -41,7 +41,7 @@ void client_cmd_handler(socket_md_t* sock) {
       // send the file to server
       // 
       int send_bytes = send_file(sock, sock->client_sock_fd);
-      printf("File Bytes Sent: %d", send_bytes);
+      printf("File Bytes Sent: %d\n", send_bytes);
       // Wait for acknowledgment from the other socket before declaring success
       if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
           perror("Error receiving acknowledgment from server");

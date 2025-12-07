@@ -74,7 +74,7 @@ int folder_not_exists_make(const char* file_path) {
                 // Check if it failed because directory already exists
                 if (errno == EEXIST) {
                     // Another thread created it - that's fine!
-                    return 0;
+                    continue;
                 }
                 printf("Failed to create directory: %s\n", path);
                 free(path);
