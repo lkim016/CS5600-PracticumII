@@ -22,9 +22,8 @@
 
 
 pthread_mutex_t stop_mutex = PTHREAD_MUTEX_INITIALIZER;
-bool stop_server = false;
-
 pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool stop_server = false;
 
 /**
  * @brief function to globally handle the STOP command for all threads
@@ -60,6 +59,7 @@ void* server_cmd_handler(void* arg) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
+        pthread_mutex_lock(&file_mutex);  // Lock filesystem
         int folder_exists = folder_not_exists_make(sock->sec_filepath);
         if (folder_exists == 0) {
             // if folder does not exist make if it does then check if file exists
@@ -75,6 +75,7 @@ void* server_cmd_handler(void* arg) {
           } else {
               msg = dyn_msg(sock->thread_id, "Warning: File was not received. Issue with folder path to write out to.", "");
           }
+          pthread_mutex_unlock(&file_mutex);  // Lock filesystem
 
           printf("%s\n", msg);
           int sent_status = send_msg(sock->client_sock_fd, msg);
@@ -88,8 +89,10 @@ void* server_cmd_handler(void* arg) {
 
         break;
     case GET:
+        pthread_mutex_lock(&file_mutex);  // Lock filesystem
         // send the file to client
         send_file(sock, sock->client_sock_fd);
+        pthread_mutex_unlock(&file_mutex);  // Lock filesystem
 
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
