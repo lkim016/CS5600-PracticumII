@@ -147,14 +147,13 @@ void set_server_sock_metadata(socket_md_t* sock) {
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
-      printf("%s\n", token);
       if (token_count == 0) {
         commands cmd = str_to_cmd_enum(token);
         set_command(sock, cmd);
       } else if (token_count == 1) {
+        first_path = token;
         set_first_fileInfo(token, sock);
         set_first_filepath(sock);
-        first_path = token;
       } else if (token_count == 2) {
         set_sec_fileInfo(token, sock);
         set_sec_filepath(sock);

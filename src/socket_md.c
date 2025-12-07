@@ -96,15 +96,24 @@ void set_first_filepath(socket_md_t* sock) {
 
     int file_path_len = 0;
     if (sock->first_dirs != NULL) {
-        file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename) + 1;
-        char path[file_path_len]; // ex: data/file.txt
-        sprintf(path, "%s%s", sock->first_dirs, sock->first_filename);
-        sock->first_filepath = strdup(path);
+        if(sock->first_filename != NULL) {
+            file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename) + 1;
+            char path[file_path_len]; // ex: data/file.txt
+            sprintf(path, "%s%s", sock->first_dirs, sock->first_filename);
+            sock->first_filepath = strdup(path);
+        } else {
+            file_path_len = strlen(sock->first_dirs) + 1;
+            char path[file_path_len]; // ex: data/file.txt
+            sprintf(path, "%s", sock->first_dirs);
+            sock->first_filepath = strdup(path);
+        }
     } else {
-        file_path_len = strlen(sock->first_filename) + 1;
-        char path[file_path_len];
-        sprintf(path, "%s", sock->first_filename);
-        sock->first_filepath = strdup(path);
+        if(sock->first_filename != NULL) {
+            file_path_len = strlen(sock->first_filename) + 1;
+            char path[file_path_len];
+            sprintf(path, "%s", sock->first_filename);
+            sock->first_filepath = strdup(path);
+        }
     }
     return;
 }
