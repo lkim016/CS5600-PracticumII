@@ -90,19 +90,19 @@ void* server_cmd_handler(void* arg) {
         break;
     case RM:
         if (sock->first_filepath != NULL) {
-          const char* rm_obj = sock->first_filepath;
+          const char* rm_item = sock->first_filepath;
           // need to lock here since this is modifying a folder or file
           int rm_status = rm_file_or_folder(sock);
           if(rm_status != 1) {
               const char* const_msg = "Failed to remove";
-              msg = dyn_msg(const_msg, rm_obj);
+              msg = dyn_msg(const_msg, rm_item);
           } else {
               const char* const_msg = "Successfully removed";
-              msg = dyn_msg(const_msg, rm_obj);
+              msg = dyn_msg(const_msg, rm_item);
           }
         } else {
             const char* const_msg = "First filepath is invalid";
-            msg = dyn_msg(const_msg, rm_obj);
+            msg = dyn_msg(const_msg, "");
         }
         
         
