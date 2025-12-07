@@ -151,10 +151,6 @@ void* server_cmd_handler(void* arg) {
   
   printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
 
-  // Gracefully shutdown
-  shutdown(sock->client_sock_fd, SHUT_RDWR);
-  usleep(5000);
-
   // Clean and Closing the socket:
   free_socket(sock);
   return NULL;
