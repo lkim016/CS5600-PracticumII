@@ -57,10 +57,9 @@ int folder_not_exists_make(const char* file_path) {
             return -1;
         }
         path = temp;
-
+        path[strlen(path)] = SINGLE_PATH_DELIMITER;
         // Add the token to the path
         strcat(path, token);
-        strcat(path, SINGLE_PATH_DELIMITER);
         printf("Checking path: %s\n", path);
 
         // Try to open the directory
