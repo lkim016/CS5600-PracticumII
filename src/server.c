@@ -220,11 +220,6 @@ int main(void) {
   }
   
   while(1) { // loop through to have server continue listening until shut down
-    pthread_rwlock_rdlock(&socket_mutex);
-    if (stop_server) {
-        pthread_rwlock_unlock(&socket_mutex);
-        break;  // Exit the thread if server is stopping
-    }
     pthread_rwlock_unlock(&socket_mutex);
 
     printf("\nListening for incoming connections on port %d\n", PORT);
@@ -268,6 +263,12 @@ int main(void) {
     }
 
     pthread_detach(thread); // Detach the thread to manage its own cleanup
+
+    pthread_rwlock_rdlock(&socket_mutex);
+    if (stop_server) {
+        pthread_rwlock_unlock(&socket_mutex);
+        break;  // Exit the thread if server is stopping
+    }
   }
 
   close(socket_desc);
