@@ -135,7 +135,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     int msize = 0;
     // Calculate message length when combined by delimiters - command,filename,file_size,remote_filename
     for(int i = 1; i < argc; i++) {
-      msize += strlen(argv[i]) + strlen(DELIMITER); // Adding 1 for the delimiter/comma
+      msize += strlen(argv[i]) + 1; // Adding 1 for the delimiter/comma
     }
 
     char* server_message = (char*)malloc(msize + 1); // +1 for null terminator
@@ -148,8 +148,14 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
     // Construct the message with delimiters
     // example: ./rfs WRITE data/file.txt remote/file.txt
     // becomes: WRITE, data/file.txt, remote/file.txt
+    int msgi = 0;
     for(int i = 1; i < argc; i++) {
-      snprintf(server_message, strlen(argv[i]) + 1, "%s%s", argv[i], DELIMITER);
+      char* command = argv[i];
+      int c = 0;
+      while(command[c] != '\0') {
+        server_message[msgi++] = command[c++];
+      }
+      server_message[msgi++] = SINGLE_DELIM;
     }
 
     printf("Client Message: %s\n", server_message);

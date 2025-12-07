@@ -16,7 +16,7 @@
 #define PORT 5000
 #define SERVER_IP "127.0.0.1"
 */
-#define DELIMITER ","
+#define SINGLE_DELIM ','
 
 #ifdef _WIN32
     #define PATH_DELIMITER "\\"
