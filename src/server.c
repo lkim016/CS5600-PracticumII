@@ -53,6 +53,8 @@ void* server_cmd_handler(void* arg) {
   set_thread_id(sock, (unsigned long)thread_id);
   printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
 
+  print_write_file_info(sock); // FIXME: maybe delete
+  
   printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
 
   // Gracefully shutdown
@@ -188,7 +190,6 @@ int main(void) {
     set_server_sock_metadata(server_metadata);
     
     printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_metadata->command), server_metadata->first_filepath, server_metadata->sec_filepath);
-    print_write_file_info(server_metadata); // FIXME: maybe delete
 
     // Create reader and writer threads:
     pthread_t thread;
