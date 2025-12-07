@@ -181,7 +181,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
     printf("Msg from client: %s\n", client_message);
 
     // need to process the client msg into separate cmd, local filename, server filename if sending as 1 string
-    // const char* first_path = NULL;
+    const char* first_path = NULL;
     int token_count = 0;
     char* token = strtok(client_message, DELIMITER);
     while (token != NULL) {
@@ -189,7 +189,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
         commands cmd = str_to_cmd_enum(token);
         set_command(sock, cmd);
       } else if (token_count == 1) {
-        // first_path = token;
+        first_path = token;
         set_first_fileInfo(token, sock);
         set_first_filepath(sock);
       } else if (token_count == 2) {
@@ -200,10 +200,10 @@ void set_server_sock_metadata(socket_md_t* sock) {
       token = strtok(NULL, DELIMITER);
     }
 
-    // if (sock->sec_filename == NULL) { // if 3 command is omitted
-    //   set_sec_fileInfo(first_path, sock);
-    //   set_sec_filepath(sock);
-    // }
+    if (sock->sec_filename == NULL) { // if 3 command is omitted
+      set_sec_fileInfo(first_path, sock);
+      set_sec_filepath(sock);
+    }
 
 }
 
