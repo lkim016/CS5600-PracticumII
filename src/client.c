@@ -19,8 +19,6 @@
 #include "utils.h"
 
 
-char server_message[MSG_SIZE]; // Declare client message - since its a stream will send as comma-delimited string
-
 
 /**
  * @brief handles the CLI args commands for the client
@@ -34,6 +32,7 @@ void client_cmd_handler(socket_md_t* sock) {
   }
   
   // Clean buffers:
+  char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
   memset(server_message,'\0',sizeof(server_message));
   const char* msg = NULL;
   // handle different commands
@@ -120,7 +119,8 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
  * @param argv char* - arguments input from the CLI
  */
 void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
-  // Clean buffer:
+    char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
+    // Clean buffer:
     memset(server_message,'\0',sizeof(server_message));
 
     // Construct the message with delimiters

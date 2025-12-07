@@ -23,7 +23,6 @@
 
 pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-char client_message[MSG_SIZE];
 bool stop_server = false;
 
 
@@ -45,10 +44,11 @@ void* server_cmd_handler(void* arg) {
   socket_md_t* sock = (socket_md_t*)arg;
   if (!sock) {
       fprintf(stderr, "ERROR: Socket is NULL\n");
-      return;
+      return NULL;
   }
 
   // Clean buffers:
+  char client_message[MSG_SIZE];
   memset(client_message,'\0',sizeof(client_message));
   char* msg = NULL;
   switch(sock->command) {
@@ -74,7 +74,7 @@ void* server_cmd_handler(void* arg) {
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
             perror("Error receiving acknowledgment from server\n");
-            return;
+            return NULL;
         }
         
         printf("Client's response: %s\n", client_message);
@@ -106,6 +106,7 @@ void* server_cmd_handler(void* arg) {
         printf("Unknown command\n");
         break;
   }
+  return NULL;
 }
 
 /**
@@ -115,6 +116,7 @@ void* server_cmd_handler(void* arg) {
  */
 void set_srvr_sock_metadata(socket_md_t* sock) {
     // Clean buffers:
+    char client_message[MSG_SIZE];
     memset(client_message, '\0', sizeof(client_message));
     // Receive client's message:
     
@@ -222,7 +224,7 @@ int main(void) {
           ntohs(client_addr.sin_port));
 
     // Inside your main loop
-    socket_md_t* client_md = dup_sock_md(server_metadata);
+    socket_md_t* client_md = dup_socket_md(server_metadata);
     if (!client_md) {
         printf("Failed to create client socket\n");
         close(server_metadata->client_sock_fd);

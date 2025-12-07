@@ -27,7 +27,7 @@ socket_md_t* create_socket_md() {
 }
 
 // Helper function to clone server_sck for each client thread
-socket_md_t* dup_sock_md(socket_md_t* sock) {
+socket_md_t* dup_socket_md(socket_md_t* sock) {
     socket_md_t* dup_sock = malloc(sizeof(socket_md_t));
     if (!dup_sock) {
         perror("Failed to allocate memory for client socket");
