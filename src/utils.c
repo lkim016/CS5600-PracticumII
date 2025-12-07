@@ -245,7 +245,7 @@ int send_msg(int sock_fd, const char* message) {
 }
 
 
-int send_file(socket_md_t* sock, int sock_fd) {
+void send_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         free_socket(sock);
@@ -305,7 +305,6 @@ int send_file(socket_md_t* sock, int sock_fd) {
     // send the file data
     char buffer[CHUNK_SIZE]; // buffer to hold file chunks
     size_t bytes_read;
-    size_t tsent = 0;
     while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
         size_t total_sent = 0;
 
@@ -323,14 +322,9 @@ int send_file(socket_md_t* sock, int sock_fd) {
 
             total_sent += sent;
         }
-        tsent = total_sent;
     }
 
     fclose(file);
-    if (tsent == bytes_read) {
-        return 0;
-    }
-    return 1;
 }
 
 

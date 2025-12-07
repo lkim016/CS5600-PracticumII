@@ -84,8 +84,8 @@ void* server_cmd_handler(void* arg) {
         break;
     case GET:
         // send the file to client
-        int send_bytes = send_file(sock, sock->client_sock_fd);
-        printf("File Bytes Sent: %d\n", send_bytes);
+        send_file(sock, sock->client_sock_fd);
+        
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
             perror("Error receiving acknowledgment from server\n");

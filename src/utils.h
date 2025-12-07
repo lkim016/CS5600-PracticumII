@@ -61,7 +61,7 @@ int send_msg(int sock_fd, const char* message);
  * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param sock_fd int - the socket file descriptor that the file data will be sent to
  */
-int send_file(socket_md_t* sock, int sock_fd);
+void send_file(socket_md_t* sock, int sock_fd);
 
 /**
  * @brief depending on the command, a TCP socket is being asked to recevied a read file from the other TCP socket and then write it out to its local env.
