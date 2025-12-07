@@ -37,7 +37,6 @@ void handle_stop(const char* exit_msg) {
     printf("%s", exit_msg);
 }
 
-
 /**
  * @brief receives the args message from the Client and distinguishes the CLI args commands into the respective member fields of the socket metadata obj
  *
@@ -102,7 +101,10 @@ void* server_cmd_handler(void* arg) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-        if (folder_not_exists_make(sock->sec_filepath) == 1) {
+        pthread_mutex_lock(&socket_mutex); // Lock the socket for server command exec thread
+        int folder_exists = folder_not_exists_make(sock->sec_filepath);
+        pthread_mutex_unlock(&socket_mutex); // Unlock the socket after server command exec thread
+        if (folder_exists == 0) {
             if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
               msg = "Error receiving file\n";
             } else {
@@ -131,17 +133,17 @@ void* server_cmd_handler(void* arg) {
     case RM:
         const char* rm_obj = sock->first_filepath;
         // need to lock here since this is modifying a folder or file
-        
-        pthread_mutex_lock(&socket_mutex); // Lock the socket for server command exec thread
-        if(rm_file_or_folder(sock) != 1) {
+        pthread_mutex_lock(&socket_mutex);
+        int rm_status = rm_file_or_folder(sock);
+        pthread_mutex_unlock(&socket_mutex);
+        if(rm_status != 1) {
             const char* const_msg = "Failed to remove";
             msg = dyn_msg(const_msg, rm_obj);
         } else {
             const char* const_msg = "Successfully removed";
             msg = dyn_msg(const_msg, rm_obj);
         }
-        pthread_mutex_unlock(&socket_mutex); // Unlock the socket after server command exec thread
-
+        
         if (msg != NULL) {
             if (send_msg(sock->client_sock_fd, msg) < 0) {
                 perror("Failed to send response to client\n");
@@ -159,7 +161,7 @@ void* server_cmd_handler(void* arg) {
         break;
   }
   
-  // Closing the socket:
+  // Clean and Closing the socket:
   free_socket(sock);
   return NULL;
 }

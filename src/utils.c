@@ -69,6 +69,11 @@ int folder_not_exists_make(const char* file_path) {
         } else {
             // Directory doesn't exist, create it
             if (mkdir(path, 0755) != 0) {
+                // Check if it failed because directory already exists
+                if (errno == EEXIST) {
+                    // Another thread created it - that's fine!
+                    continue;
+                }
                 printf("Failed to create directory: %s\n", path);
                 free(path);
                 return -1;
@@ -80,7 +85,7 @@ int folder_not_exists_make(const char* file_path) {
 
     free(dirs);
     free(path);
-    return 1;
+    return 0;
 }
 
 /**
@@ -150,7 +155,7 @@ int rm_file_or_folder(socket_md_t* sock) {
 
             if (remove(filepath) == 0) {
                 printf("File '%s' has been deleted successfully\n", filename);
-                return 1;
+                return 0;
             } else {
                 perror("Error deleting the file\n");
                 return -1;
@@ -181,7 +186,7 @@ int rm_file_or_folder(socket_md_t* sock) {
         }
     }
 
-    return 0;
+    return 1;
 }
 
 

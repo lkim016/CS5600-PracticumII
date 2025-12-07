@@ -13,7 +13,10 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <errno.h>
 #include <sys/stat.h>
+
+#include <pthread.h>
 
 #include "config.h"
 #include "socket_md.h"
