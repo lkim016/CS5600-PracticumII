@@ -91,16 +91,17 @@ void* server_cmd_handler(void* arg) {
     case GET:
         pthread_mutex_lock(&file_mutex);  // Lock filesystem
         // send the file to client
-        send_file(sock, sock->client_sock_fd);
+        int send_status = send_file(sock, sock->client_sock_fd);
         pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-
-        // Wait for acknowledgment from the other socket before declaring success
-        if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
-            perror("Error receiving acknowledgment from client\n");
-            return NULL;
+        if (send_status == 0) {
+          // Wait for acknowledgment from the other socket before declaring success
+          if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
+              perror("Error receiving acknowledgment from client\n");
+              return NULL;
+          }
+          
+          printf("Client's response: %s\n", client_message);
         }
-        
-        printf("Client's response: %s\n", client_message);
         break;
     case RM:
         if (sock->first_filepath != NULL) {

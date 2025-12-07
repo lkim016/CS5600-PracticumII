@@ -39,19 +39,22 @@ void client_cmd_handler(socket_md_t* sock) {
   switch (sock->command) {
     case WRITE:
       // send the file to server
-      send_file(sock, sock->client_sock_fd);
+      int sent_status = send_file(sock, sock->client_sock_fd);
 
-      // Wait for acknowledgment from the other socket before declaring success
-      ssize_t recv_bytes = recv(sock->client_sock_fd, server_message, sizeof(server_message), 0);
-      if (recv_bytes < 0) {
-          perror("Error receiving acknowledgment from server");
-          return;
-      } else if (recv_bytes == 0) {
-          printf("Server closed connection\n");
-          return;
+      if (sent_status == 0) {
+        // Wait for acknowledgment from the other socket before declaring success
+        ssize_t recv_bytes = recv(sock->client_sock_fd, server_message, sizeof(server_message), 0);
+        if (recv_bytes < 0) {
+            perror("Error receiving acknowledgment from server");
+            return;
+        } else if (recv_bytes == 0) {
+            printf("Server closed connection\n");
+            return;
+        }
+
+        printf("Server's response: %s\n",server_message);
       }
-
-      printf("Server's response: %s\n",server_message);
+      
       break;
     case GET:
       int folder_exists = folder_not_exists_make(sock->sec_filepath);

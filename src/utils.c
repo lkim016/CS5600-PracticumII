@@ -245,18 +245,18 @@ int send_msg(int sock_fd, const char* message) {
 }
 
 
-void send_file(socket_md_t* sock, int sock_fd) {
+int send_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "WARNING: file send - socket is NULL\n");
-        return;
+        return -1;
     }
     if (sock->first_filepath == NULL) {
         fprintf(stderr, "WARNING: file send - read filename is NULL\n");
-        return;
+        return -1;
     }
     if (sock_fd < 0) {
         fprintf(stderr, "WARNING: file send - socket file descriptor is invalid\n");
-        return;
+        return -1;
     }
 
     // Lock the socket mutex to ensure thread-safety when working with the file and socket
@@ -266,7 +266,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
     if (file == NULL) {
         fprintf(stderr, "WARNING: file send - issue opening read file\n");
         pthread_mutex_unlock(&utils_mutex);
-        return;
+        return -1;
     }
 
     // Get the size of the file
@@ -274,20 +274,20 @@ void send_file(socket_md_t* sock, int sock_fd) {
         fprintf(stderr, "WARNING: file send - seeking to end of read file\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
-        return;
+        return -1;
     }
     long file_size = ftell(file);
     if(file_size < 0) {
         fprintf(stderr, "WARNING: file send - getting read file size\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
-        return;
+        return -1;
     }
     if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
         fprintf(stderr, "WARNING: file send - seeking to start of read file\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
-        return;
+        return -1;
     }
     
     // send the file size
@@ -296,7 +296,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
         fprintf(stderr, "WARNING: file send - sending file size\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
-        return;
+        return -1;
     }
 
     // send the file data
@@ -324,6 +324,7 @@ void send_file(socket_md_t* sock, int sock_fd) {
 
     fclose(file);
     pthread_mutex_unlock(&utils_mutex);
+    return 0;
 }
 
 int rcv_file(socket_md_t* sock, int sock_fd) {
