@@ -71,14 +71,15 @@ void* server_cmd_handler(void* arg) {
               msg = "Warning: File was not received - issues with folder path to write out to\n";
           }
 
-          if (send_msg(sock->client_sock_fd, msg) < 0) {
+          int sent_status = send_msg(sock->client_sock_fd, msg);
+          if (sent_status < 0) {
               perror("Failed to send response to client\n");
           }
 
         break;
     case GET:
         // send the file to client
-        send_file(sock, sock->client_sock_fd);
+        int send_status = send_file(sock, sock->client_sock_fd);
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
             perror("Error receiving acknowledgment from server\n");
@@ -227,6 +228,7 @@ int main(void) {
       printf("Can't accept\n");
       continue;
     }
+    
     // create a new socket metadata for every client connection
     socket_md_t* server_metadata = create_socket_md(client_sock);
     if (!server_metadata) {
@@ -240,10 +242,8 @@ int main(void) {
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
 
-    pthread_mutex_lock(&socket_mutex);
     // Set server socket metadata
     set_server_sock_metadata(server_metadata);
-    pthread_mutex_unlock(&socket_mutex);
     
     printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_metadata->command), server_metadata->first_filepath, server_metadata->sec_filepath);
     print_write_file_info(server_metadata); // FIXME: maybe delete

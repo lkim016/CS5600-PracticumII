@@ -40,7 +40,7 @@ void client_cmd_handler(socket_md_t* sock) {
     case WRITE:
       // send the file to server
       // 
-      send_file(sock, sock->client_sock_fd);
+      int send_status = send_file(sock, sock->client_sock_fd);
       // Wait for acknowledgment from the other socket before declaring success
       if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
           perror("Error receiving acknowledgment from server");

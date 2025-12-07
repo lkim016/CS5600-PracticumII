@@ -239,7 +239,7 @@ int send_msg(int sock_fd, const char* message) {
 }
 
 
-void send_file(socket_md_t* sock, int sock_fd) {
+int send_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         free_socket(sock);
@@ -299,29 +299,32 @@ void send_file(socket_md_t* sock, int sock_fd) {
     // send the file data
     char buffer[CHUNK_SIZE]; // buffer to hold file chunks
     size_t bytes_read;
+    size_t tsent = 0;
     while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
-    size_t total_sent = 0;
+        size_t total_sent = 0;
 
-    while (total_sent < bytes_read) {
-        ssize_t sent = send(sock_fd, buffer + total_sent,
-                            bytes_read - total_sent, 0);
+        while (total_sent < bytes_read) {
+            size_t sent = send(sock_fd, buffer + total_sent,
+                                bytes_read - total_sent, 0);
 
-        if (sent < 0) {
-            perror("Unable to send message\n");
-            // handle error (disconnect, etc.)
-            fclose(file);
-            free_socket(sock);
-            exit(1);
+            if (sent < 0) {
+                perror("Unable to send message\n");
+                // handle error (disconnect, etc.)
+                break;
+            }
+
+            printf("Bytes Sent: %lu\n", sent);
+
+            total_sent += sent;
         }
-
-        printf("Bytes Sent: %lu\n", sent);
-
-        total_sent += sent;
-        }
+        tsent = total_sent;
     }
 
     fclose(file);
-    
+    if (tsent == bytes_read) {
+        return tsent;
+    }
+    return 0;
 }
 
 
