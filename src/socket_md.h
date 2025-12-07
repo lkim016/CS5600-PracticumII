@@ -44,14 +44,6 @@ typedef struct socket_metadata {
 socket_md_t* create_socket_md();
 
 /**
- * @brief function to duplicate a TCP socket_md_t metadata to service multiple clients simultaneously.
- *
- * @param socket socket_md_t* - the pointer to the server socket metadata object to be duplicated for concurrency
- * @return socket_md_t* - return the initialized socket metadata object
- */
-socket_md_t* dup_socket_md(socket_md_t* sock);
-
-/**
  * @brief converts a string type command to an enum type.
  *
  * @param str const char * - the string type command
@@ -73,7 +65,7 @@ const char* cmd_enum_to_str(commands cmd);
  * @param socket socket_md_t* - the pointer to the socket metadata object
  * @param command commands - the enum type command
  */
-void set_sock_command(socket_md_t* sock, commands command);
+void set_command(socket_md_t* sock, commands command);
 
 /**
  * @brief prints out the socket metadata object read file info.
@@ -94,14 +86,14 @@ void print_write_file_info(socket_md_t* sock);
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  */
-void set_sock_first_filepath(socket_md_t* sock);
+void set_first_filepath(socket_md_t* sock);
 
 /**
  * @brief initializes the socket metadata object write file's filepath member.
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  */
-void set_sock_sec_filepath(socket_md_t* sock);
+void set_sec_filepath(socket_md_t* sock);
 
 /**
  * @brief splits and sets the provided path into filename and folder directories for the read file info members of the socket metadata object.

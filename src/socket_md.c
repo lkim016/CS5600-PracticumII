@@ -8,13 +8,15 @@
 
 #include "socket_md.h"
 
-socket_md_t* create_socket_md() {
+socket_md_t* create_socket_md(int server_fd, int client_fd) {
     socket_md_t* sock = (socket_md_t*) calloc(1, sizeof(socket_md_t));
     if (sock == NULL) {
         fprintf(stderr, "ERROR: dynamic memory was not able to be allocated\n");
         exit(1);
     }
 
+    sock->server_sock_fd = server_fd;
+    sock->client_sock_fd = client_fd;
     sock->command = NULL_VAL;
     sock->first_dirs = NULL;
     sock->sec_dirs = NULL;
@@ -24,19 +26,6 @@ socket_md_t* create_socket_md() {
     sock->sec_filepath = NULL;
 
     return sock;
-}
-
-// Helper function to clone server_sck for each client thread
-socket_md_t* dup_socket_md(socket_md_t* sock) {
-    socket_md_t* dup_sock = malloc(sizeof(socket_md_t));
-    if (!dup_sock) {
-        perror("Failed to allocate memory for client socket");
-        return NULL;
-    }
-    // Copy data from server_sck to client_sck (except for the client_sock_fd)
-    memcpy(dup_sock, sock, sizeof(socket_md_t));
-
-    return dup_sock;
 }
 
 commands str_to_cmd_enum(const char* str) {
@@ -57,7 +46,7 @@ const char* cmd_enum_to_str(commands cmd) {
 }
 
 
-void set_sock_command(socket_md_t* sock, commands command) {
+void set_command(socket_md_t* sock, commands command) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         exit(1);
@@ -91,7 +80,7 @@ Notes:
 - check if there's a folder if not then use default path and file
 - need to check if the sock->first_dirs is null - if pdir is null then just return filename
 */
-void set_sock_first_filepath(socket_md_t* sock) {
+void set_first_filepath(socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         exit(1);
@@ -113,7 +102,7 @@ void set_sock_first_filepath(socket_md_t* sock) {
 }
 
 // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-void set_sock_sec_filepath(socket_md_t* sock) {
+void set_sec_filepath(socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         exit(1);
