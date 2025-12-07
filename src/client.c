@@ -165,7 +165,7 @@ void send_args_message(socket_md_t* sock, int argc, char* argv[]) {
  */
 int main(int argc, char* argv[]) {
 
-  if (argc < 2) {
+  if (argc < 3 && strcmp(argv[1], "STOP") != 0) {
       printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
       return -1;
   } else if (argc < 5) {

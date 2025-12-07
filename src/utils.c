@@ -18,7 +18,7 @@ char* dyn_msg(unsigned long id, const char* part1, const char* part2) {
         perror("Memory allocation failed\n");
         return NULL;
     }
-    sprintf(msg_ptr, "%lu: %s %s\n", id, part1, part2);
+    sprintf(msg_ptr, "%lu - %s %s\n", id, part1, part2);
     return msg_ptr;
 }
 

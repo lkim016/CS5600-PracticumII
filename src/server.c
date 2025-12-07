@@ -21,9 +21,10 @@
 #include "utils.h"
 
 
-pthread_rwlock_t socket_mutex = PTHREAD_RWLOCK_INITIALIZER;
-
+pthread_mutex_t stop_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool stop_server = false;
+
+pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * @brief function to globally handle the STOP command for all threads
@@ -31,9 +32,9 @@ bool stop_server = false;
  * @param exit_msg char* - a const char string that holds the server STOP message
  */
 void handle_stop(const char* exit_msg) {
-    pthread_rwlock_wrlock(&socket_mutex);
+    pthread_mutex_lock(&stop_mutex);
     stop_server = true;  // Set the global stop flag
-    pthread_rwlock_unlock(&socket_mutex);
+    pthread_mutex_unlock(&stop_mutex);
     printf("%s", exit_msg);
 }
 
@@ -59,15 +60,13 @@ void* server_cmd_handler(void* arg) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-        pthread_rwlock_wrlock(&socket_mutex); // Lock the socket for server command exec thread
         int folder_exists = folder_not_exists_make(sock->sec_filepath);
-        pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
         if (folder_exists == 0) {
             // if folder does not exist make if it does then check if file exists
             // if it does then need to get file and rename it to a timestamped version
-            pthread_rwlock_rdlock(&socket_mutex); // Lock the socket for server command exec thread
+            
             int rcvd_status = rcv_file(sock, sock->client_sock_fd);
-            pthread_rwlock_unlock(&socket_mutex); // Unlock the socket after server command exec thread
+            
             if (rcvd_status < 0 ) {
               msg = dyn_msg(sock->thread_id, "Error receiving file", "");
             } else {
@@ -78,9 +77,7 @@ void* server_cmd_handler(void* arg) {
           }
 
           printf("%s\n", msg);
-          pthread_rwlock_wrlock(&socket_mutex);
           int sent_status = send_msg(sock->client_sock_fd, msg);
-          pthread_rwlock_unlock(&socket_mutex); // Unlock
           if (sent_status < 0) {
               perror("Failed to send response to client\n");
           }
@@ -106,7 +103,9 @@ void* server_cmd_handler(void* arg) {
         if (sock->first_filepath != NULL) {
           const char* rm_item = sock->first_filepath;
           // need to lock here since this is modifying a folder or file
+          pthread_mutex_lock(&file_mutex);
           int rm_status = rm_file_or_folder(sock);
+          pthread_mutex_unlock(&file_mutex);
           if(rm_status != 1) {
               const char* const_msg = "Failed to remove";
               msg = dyn_msg(sock->thread_id, const_msg, rm_item);
@@ -232,12 +231,13 @@ int main(void) {
   }
   
   while(1) { // loop through to have server continue listening until shut down
-    pthread_rwlock_rdlock(&socket_mutex);
-    if (stop_server) {
-        pthread_rwlock_unlock(&socket_mutex);
+    pthread_mutex_lock(&stop_mutex);
+    bool should_stop = stop_server;
+    pthread_mutex_unlock(&stop_mutex);
+
+    if (should_stop) {
         break;  // Exit the thread if server is stopping
     }
-    pthread_rwlock_unlock(&socket_mutex);
     
     printf("\nListening for incoming connections on port %d\n", PORT);
     
