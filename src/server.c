@@ -71,10 +71,10 @@ void* server_cmd_handler(void* arg) {
             if (rcvd_status < 0 ) {
               msg = dyn_msg(sock->thread_id, "Error receiving file", "");
             } else {
-              msg = "File sent successfully!\n";
+              msg = dyn_msg(sock->thread_id,"File sent successfully!", "");
             }
           } else {
-              msg = "Warning: File was not received - issues with folder path to write out to\n";
+              msg = dyn_msg(sock->thread_id, "Warning: File was not received. Issue with folder path to write out to.", "");
           }
 
           printf("%s\n", msg);
