@@ -156,6 +156,7 @@ void* server_cmd_handler(void* arg) {
 
   // Clean and Closing the socket:
   free_socket(sock);
+  sock = NULL;
   return NULL;
 }
 
@@ -189,10 +190,10 @@ void set_server_sock_metadata(socket_md_t* sock) {
         set_command(sock, cmd);
       } else if (token_count == 1) {
         first_path = token;
-        set_first_fileInfo(strdup(token), sock);
+        set_first_fileInfo(token, sock);
         set_first_filepath(sock);
       } else if (token_count == 2) {
-        set_sec_fileInfo(strdup(token), sock);
+        set_sec_fileInfo(token, sock);
         set_sec_filepath(sock);
       }
       token_count++;
@@ -200,7 +201,7 @@ void set_server_sock_metadata(socket_md_t* sock) {
     }
 
     if (sock->sec_filename == NULL) { // if 3 command is omitted
-      set_sec_fileInfo(strdup(first_path), sock);
+      set_sec_fileInfo(first_path, sock);
       set_sec_filepath(sock);
     }
 
@@ -295,7 +296,6 @@ int main(void) {
     }
 
     pthread_detach(thread); // Detach the thread to manage its own cleanup
-    free(server_metadata);
 
   }
 

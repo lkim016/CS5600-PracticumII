@@ -329,10 +329,12 @@ void free_socket(socket_md_t* sock) {
 
     if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
         close(sock->client_sock_fd);
+        printf("Closed client socket with fd: %d\n", sock->client_sock_fd);
     }
 
     if (sock->server_sock_fd >= 0) {
         close(sock->server_sock_fd);
+        printf("Closed server socket with fd: %d\n", sock->server_sock_fd);
     }
 
     free(sock);

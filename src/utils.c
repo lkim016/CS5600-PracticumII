@@ -287,27 +287,27 @@ int send_file(socket_md_t* sock, int sock_fd) {
     // printf("Local File path: %s\n", file_path);
     FILE *file = fopen(sock->first_filepath, "rb"); // "rb" for read binary
     if (file == NULL) {
-        fprintf(stderr, "WARNING: file send - issue opening read file\n");
+        fprintf(stderr, "WARNING: file send - Issue opening read file\n");
         pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
 
     // Get the size of the file
     if (fseek(file, 0, SEEK_END) != 0) {
-        fprintf(stderr, "WARNING: file send - seeking to end of read file\n");
+        fprintf(stderr, "WARNING: file send - Seeking to end of read file\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
         return -1;
     }
     long file_size = ftell(file);
     if(file_size < 0) {
-        fprintf(stderr, "WARNING: file send - getting read file size\n");
+        fprintf(stderr, "WARNING: file send - Getting read file size\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
         return -1;
     }
     if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
-        fprintf(stderr, "WARNING: file send - seeking to start of read file\n");
+        fprintf(stderr, "WARNING: file send - Seeking to start of read file\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
         return -1;
@@ -316,7 +316,7 @@ int send_file(socket_md_t* sock, int sock_fd) {
     // send the file size
     uint32_t size = htonl(file_size);
     if (send(sock_fd, &size, sizeof(size), 0) < 0) {
-        fprintf(stderr, "WARNING: file send - sending file size\n");
+        fprintf(stderr, "WARNING: file send - Sending file size\n");
         pthread_mutex_unlock(&utils_mutex);
         fclose(file);
         return -1;
@@ -333,7 +333,7 @@ int send_file(socket_md_t* sock, int sock_fd) {
                                 bytes_read - total_sent, 0);
 
             if (sent < 0) {
-                fprintf(stderr, "WARNING: file send - Unable to send message\n");
+                fprintf(stderr, "ERROR: file send - Unable to send message\n");
                 pthread_mutex_unlock(&utils_mutex);
                 // handle error (disconnect, etc.)
                 break;
@@ -352,16 +352,16 @@ int send_file(socket_md_t* sock, int sock_fd) {
 
 int rcv_file(socket_md_t* sock, int sock_fd) {
     if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL\n");
+        fprintf(stderr, "WARNING: file receive - Socket is NULL\n");
         return -1;
     }
     if (sock->sec_filepath == NULL) {
-        fprintf(stderr, "ERROR: write filename is NULL\n");
+        fprintf(stderr, "WARNING: file receive - Write filename is NULL\n");
         return -1;
 
     }
     if (sock_fd < 0) {
-        fprintf(stderr, "ERROR: socket file descriptor is invalid\n");
+        fprintf(stderr, "WARNING: file receive - Socket file descriptor is invalid\n");
         return -1;
     }
 
@@ -370,7 +370,7 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
 
     uint32_t size;
     if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
-        perror("Error receiving file size\n");
+        perror("ERROR: file receive - Error receiving file size\n");
         pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
@@ -378,14 +378,14 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
     printf("File Size: %u\n", size);
 
     if (size == 0) {
-        printf("Received file size is 0. No file to receive.\n");
+        printf("ERROR: file receive - Received file size is 0\n");
         pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
 
     FILE *out_file = fopen(sock->sec_filepath, "wb");
     if (out_file == NULL) {
-        perror("Error opening write file\n");
+        perror("ERROR: file receive - Error opening write file\n");
         pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
@@ -398,20 +398,20 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
     while (total_received < size) {
         received = recv(sock_fd, buffer, CHUNK_SIZE, 0);
         if (received < 0) {
-            perror("Error receiving data\n");
+            perror("ERROR: file receive - Error receiving data\n");
             fclose(out_file);
             pthread_mutex_unlock(&utils_mutex);
             return -1;
         } else if (received == 0) {
             // No more data, but the total received doesn't match the expected size
-            fprintf(stderr, "Warning: Connection closed prematurely\n");
+            fprintf(stderr, "Warning: file receive - Connection closed prematurely\n");
             break;
         }
 
         // Write the received data to the file
         size_t written = fwrite(buffer, 1, received, out_file);
         if (written != received) {
-            perror("Error writing to file\n");
+            perror("ERROR: file receive - Error writing to file\n");
             fclose(out_file);
             pthread_mutex_unlock(&utils_mutex);
             return -1;
@@ -421,7 +421,7 @@ int rcv_file(socket_md_t* sock, int sock_fd) {
 
         // Check if we have received all the expected bytes
         if (total_received > size) {
-            fprintf(stderr, "Error: More data received than expected\n");
+            fprintf(stderr, "ERROR: file receive - More data received than expected\n");
             fclose(out_file);
             pthread_mutex_unlock(&utils_mutex);
             return -1;

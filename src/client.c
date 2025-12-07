@@ -114,12 +114,12 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
   set_command(sock, str_to_cmd_enum(argv[1]));
 
   if (argc > 2) { // set first_filepath
-      set_first_fileInfo(strdup(argv[2]), sock);
+      set_first_fileInfo(argv[2], sock);
       set_first_filepath(sock);
   }
   
   if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-      set_sec_fileInfo(strdup(argv[3]), sock);
+      set_sec_fileInfo(argv[3], sock);
       set_sec_filepath(sock);
   }
 }
