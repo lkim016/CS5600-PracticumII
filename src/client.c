@@ -65,6 +65,7 @@ void client_cmd_handler(socket_md_t* sock) {
             perror("Failed to send response to server");
             return;
         }
+        break;
     case RM:
         // Wait for acknowledgment from the other socket before declaring success
         if (recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
