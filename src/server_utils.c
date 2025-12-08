@@ -48,8 +48,8 @@ void* server_cmd_handler(socket_md_t* sock) {
   char* msg = NULL;
   switch(sock->command) {
     case WRITE:
-        const char* filepath = sock->sec_filepath;
         int sock_fd = sock->client_sock_fd;
+        const char* filepath = sock->sec_filepath;
 
         pthread_mutex_lock(&file_mutex);  // Lock filesystem
         int folder_exists = folder_not_exists_make(filepath);
@@ -64,29 +64,16 @@ void* server_cmd_handler(socket_md_t* sock) {
         printf("Receiving file (%u bytes) to: %s\n", size, sec_filepath);
         ssize_t file_rcvd_bytes = rcv_file(sock_fd, sec_filepath, size);
 
-        msg = build_send_msg(threadID,"Server: File sent successfully!", "");
+        if (folder_exists < 0) {
+            if (file_rcvd_bytes < 0 ) {
+                msg = build_send_msg(threadID, "Server: Error receiving file", "");
+            }
+            msg = build_send_msg(threadID, "Server: Error folder was not able to be made", "");
+        } else {
+            msg = build_send_msg(threadID,"Server: File sent successfully!", "");
+        }
         
-        // if (file_rcvd_bytes < 0 ) {
-        //       msg = build_send_msg(threadID, "Server: Error receiving file", "");
-        //     } else {
-              
-        //     }
-        // } else {
-        //       if (folder_exists < 0) {
-        //           msg = build_send_msg(threadID, "Server: Error folder was not able to be made", "");
-        //       }
-        //       msg = build_send_msg(threadID, "Server: Error file size sent is 0", "");
-
-        // if (file_size > 0) { // && folder_exists == 0) {
-        //     // if file_size received is valid
-        //     // if it does then need to get file and rename it to a timestamped version
-        //     ssize_t file_rcvd_bytes = rcv_file(filepath, sock_fd, file_size);
             
-        // }
-
-        // if (send_msg(sock_fd, msg) < 0) {
-        //     perror("Failed to send response to client\n");
-        // }
 
         printf("%s\n", msg);
 
@@ -95,21 +82,26 @@ void* server_cmd_handler(socket_md_t* sock) {
         }
             
         break;
-    /*
     case GET:
-        pthread_mutex_lock(&file_mutex);  // Lock filesystem
-        // send the file to client
-        int send_status = send_file(sock, sock->client_sock_fd);
-        pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-        if (send_status == 0) {
-          // Wait for acknowledgment from the other socket before declaring success
-          if (recv(sock->client_sock_fd, client_message, sizeof(client_message), 0) < 0) {
-              perror("Error receiving acknowledgment from client\n");
-              // return NULL;
-              return;
-          }
-          
-          print_client_resp(client_message);
+        int sock_fd =sock->client_sock_fd;
+        const char* filepath = sock->first_filepath;
+        // check if file_exits - if yes then send and receive
+        long file_size = get_file_size(filepath);
+        sock->file_size = htonl(file_size);
+        printf("Server: File exists with size of %ld.\n", file_size);
+        printf("Long File Size: %ld\n", file_size);
+        if (file_exists(filepath) == 1 && file_size > 0) {
+            int request_sent_status = send_request(sock);
+            if (request_sent_status == 0) {
+                printf("Sending file data (%lu bytes)...\n", file_size);
+                if (send_file(filepath, sock_fd) < 0) {
+                    fprintf(stderr, "send_file failed\n");
+                    return;
+                }
+                printf("File sent..\n");
+            }
+        } else {
+            fprintf(stderr, "Server: File does not exist.\n");
         }
         break;
     case RM:
@@ -144,7 +136,6 @@ void* server_cmd_handler(socket_md_t* sock) {
             free(msg); // Free the allocated memory
         }
         break;
-    */
     case STOP:
         msg = build_send_msg(threadID, "Exiting Server...", "");
         ssize_t msg_send_bytes = send_msg(sock->client_sock_fd, msg);

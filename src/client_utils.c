@@ -46,41 +46,42 @@ void client_cmd_handler(socket_md_t* sock) {
           fprintf(stderr, "Client: File does not exist.\n");
       }
       
-          // // send the file to server
-          // ssize_t file_sent_bytes = send_file(filepath, sock_fd);
-          // printf("File Sent Bytes: %ld\n", file_sent_bytes);
-          // if (file_sent_bytes > 0) {
-          //   // Wait for acknowledgment from the other socket before declaring success
-          //   ssize_t msg_recv_bytes = recv(sock_fd, server_message, MSG_SIZE, 0);
-          //   printf("Message Received Bytes: %ld\n", msg_recv_bytes);
-          //   if (msg_recv_bytes < 0) {
-          //       perror("Client: Error receiving acknowledgment from server\n");
-          //       return;
-          //   } else if (msg_recv_bytes == 0) {
-          //       printf("Client: No acknowledgement receive\n");
-          //       return;
-          //   }
-
-          //   __print_server_resp(server_message);
-      
-      
       break;
-  /*
     case GET:
-      int folder_exists = folder_not_exists_make(sock->sec_filepath);
-      if (folder_exists == 0) {
-          if (rcv_file(sock, sock->client_sock_fd) < 0 ) {
-            msg = "Error receiving file\n";
-          } else {
-            msg = "File sent successfully!\n";
-          }
-        } else {
-          msg = "Warning: File was not received - issues with folder path to write out to\n";
-        }
+        int sock_fd = sock->client_sock_fd;
+        const char* filepath = sock->sec_filepath;
 
-        if (send_msg(sock->client_sock_fd, msg) < 0) {
-            perror("Failed to send response to server");
-            return;
+        pthread_mutex_lock(&file_mutex);  // Lock filesystem
+        int folder_exists = folder_not_exists_make(filepath);
+        if (folder_exists == 0) {
+            printf("Path was created\n");
+
+        }
+        pthread_mutex_unlock(&file_mutex);  // Lock filesystem
+
+        uint32_t size = sock->file_size;
+        char* sec_filepath = sock->sec_filepath;
+        printf("Receiving file (%u bytes) to: %s\n", size, sec_filepath);
+        ssize_t file_rcvd_bytes = rcv_file(sock_fd, sec_filepath, size);
+
+        if (folder_exists < 0) {
+            if (file_rcvd_bytes < 0 ) {
+                msg = build_send_msg(threadID, "Server: Error receiving file", "");
+            }
+            msg = build_send_msg(threadID, "Server: Error folder was not able to be made", "");
+        } else {
+            msg = build_send_msg(threadID,"Server: File sent successfully!", "");
+        }
+        
+
+        // if (send_msg(sock_fd, msg) < 0) {
+        //     perror("Failed to send response to client\n");
+        // }
+
+        printf("%s\n", msg);
+
+        if (msg != NULL) {
+          free(msg);
         }
         break;
     case RM:
@@ -97,7 +98,6 @@ void client_cmd_handler(socket_md_t* sock) {
         print_server_resp(server_message);
 
       break;
-    */
     case STOP:
       // Receive the server's response:
       if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {

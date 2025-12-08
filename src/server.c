@@ -88,8 +88,6 @@ int main(void) {
           ntohs(client_addr.sin_port));
 
     rcv_request(server_metadata);
-    
-    // printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_metadata->command), server_metadata->first_filepath, server_metadata->sec_filepath);
 
     server_cmd_handler(server_metadata);
     /*
