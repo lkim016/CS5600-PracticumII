@@ -4,7 +4,7 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-typedef enum { NULL_VAL = 0, WRITE, GET, RM, STOP } commands;
+typedef enum {WRITE, GET, RM, STOP, NULL_VAL = 0} commands;
 
 struct __attribute__((packed)) header {
     uint32_t command;

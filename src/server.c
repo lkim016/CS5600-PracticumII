@@ -86,8 +86,7 @@ int main(void) {
     printf("Client connected at IP: %s and port: %i\n", 
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
-
-    rcv_request(server_metadata);
+    
 
     server_cmd_handler(server_metadata);
     /*

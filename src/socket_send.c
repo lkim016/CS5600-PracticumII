@@ -12,6 +12,23 @@
 pthread_mutex_t send_mutex = PTHREAD_MUTEX_INITIALIZER; // FIXME: maybe change name
 
 
+
+/*
+dyn_msg
+NOTE: need to free() result
+*/
+char* build_send_msg(unsigned long id, const char* part1, const char* part2) { // FIXME: change to build_send_msg
+    size_t len = strlen(part1) + strlen(part2) + 3; // 1 for space, 1 for newline, 1 for null terminator
+    char* msg_ptr = calloc(len, sizeof(char));
+    if (msg_ptr == NULL) {
+        perror("Memory allocation failed\n");
+        return NULL;
+    }
+    sprintf(msg_ptr, "Thread ID#%lu:\n  %s %s\n", id, part1, part2);
+    return msg_ptr;
+}
+
+
 /*
 send_msg
 */
@@ -53,7 +70,7 @@ int send_request(socket_md_t* sock) {
     h.command = htonl(command);
     h.fpath1_len = htonl(fpath1_len);
     h.fpath2_len = htonl(fpath2_len);
-    h.file_size = sock->file_size;
+    h.file_size = sock->file_size; // already stored as unit32_t so no need for htonl
 
     /* Send header */
     if (send(sock_fd, &h, sizeof(h), 0) != sizeof(h)) {

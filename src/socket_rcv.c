@@ -68,7 +68,6 @@ void rcv_request(socket_md_t* sock) {
     }
     set_sec_filepath(sock);
 
-    print_sock_metada(sock); // FIXME: maybe delete
 
     printf("Command: %u\n", sock->command);
     printf("Filename1: %s\n", sock->first_filepath);

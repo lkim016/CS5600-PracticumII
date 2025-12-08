@@ -27,14 +27,6 @@
 extern pthread_mutex_t stop_mutex;
 extern bool stop_server;
 
-/**
- * @brief constructs a message that is concatenated in dynamic memory allocation to be sent over TCP
- *
- * @param part1 const char* - a constant char string that will make up the first part of the new string
- * @param part2 const char* - a constant char string that will make up the second part of the new string
- */
-char* build_send_msg(unsigned long id, const char* part1, const char* part2);
-
 
 /**
  * @brief handles the CLI args commands for the server

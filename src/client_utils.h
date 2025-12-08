@@ -44,24 +44,10 @@ void client_cmd_handler(socket_md_t* sock);
 void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]);
 
 /**
- * @brief constructs message from the CLI args commands to be sent to the Server
- *
- * @param argc int - count of arguments input from the CLI
- * @param argv char* - arguments input from the CLI
- * @return char* - constructed message from the CLI args
- */
-char* build_message(int argc, char* argv[]);
-
-/**
  * @brief sends constructed message from the CLI args commands to be sent to the Server
  *
- * @param sock socket_md_t* - the pointer to the client socket metadata object
- * @param message char* - constructed message of the CLI args
- * return ssize_t -> signed size of bytes send()
+ * @param response char* - the response sent by the server
  */
-ssize_t send_args_message(socket_md_t* sock, char* message);
-
-
 void __print_server_resp(const char* response);
 
 #endif

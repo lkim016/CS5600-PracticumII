@@ -16,6 +16,7 @@ socket_md_t* create_socket_md(int client_fd) {
     }
 
     sock->client_sock_fd = client_fd;
+    sock->file_size = 0;
     sock->command = NULL_VAL;
     sock->first_dirs = NULL;
     sock->sec_dirs = NULL;
