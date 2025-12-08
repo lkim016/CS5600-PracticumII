@@ -48,7 +48,7 @@ int main(void) {
   printf("Done with binding\n");
   
   // Listen for clients:
-  if(listen(socket_desc, SERVER_BACKLOG) < 0) {
+  if(listen(socket_desc, 1) < 0) {
     printf("Error while listening\n");
     close(socket_desc);
     return -1;

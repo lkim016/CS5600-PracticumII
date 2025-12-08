@@ -40,8 +40,9 @@ int folder_not_exists_make(const char* file_path) {
             return -1;
         }
         strncpy(dirs, file_path, dir_len);  // Copy the directory part into sec_dirs
+        dirs[dir_len] = '\0';  // Manually null-terminate the string
 
-        char *path = calloc(strlen(dirs + 1), sizeof(char));
+        char *path = calloc(dir_len + 1, sizeof(char));
         int pathi = 0;
         char *token = strtok(dirs, PATH_DELIMITER);
         while (token != NULL) {
@@ -51,19 +52,21 @@ int folder_not_exists_make(const char* file_path) {
                 path[pathi++] = token[c++];
             }
             path[pathi] = LITERAL_PATH_DELIMITER;
-            path[strlen(path)] = '\0';
+            path[pathi+1] = '\0';
 
             // printf("COMB PATH: %s\n", path);
             // Create directory if it doesn't exist
             struct stat st;
             if (stat(path, &st) != 0) {
                 // Directory doesn't exist, create it
-                if (mkdir(path, 0755) != 0 && errno != EEXIST) {
-                    perror("mkdir failed");
-                    fprintf(stderr, "Failed to create directory: %s\n", path);
-                    free(dirs);
-                    free(path);
-                    return -1;
+                if (mkdir(path, 0755) != 0) {
+                    if (errno != EEXIST) {
+                        perror("mkdir failed");
+                        fprintf(stderr, "Failed to create directory: %s\n", path);
+                        free(dirs);
+                        free(path);
+                        return -1;
+                    }
                 }
             } else if (!S_ISDIR(st.st_mode)) {
                 // Path exists but is not a directory
