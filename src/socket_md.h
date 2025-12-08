@@ -24,7 +24,6 @@ typedef enum { NULL_VAL = 0, WRITE, GET, RM, STOP } commands;
  */
 typedef struct socket_metadata {
     int client_sock_fd; // file descriptor for the client socket
-    int server_sock_fd; // file descriptor for the server socket
     commands command; // execution commands from the program CLI args
     char *first_dirs; // parent dir of the file being read
     char *first_filename; // filename of the file being read
@@ -44,13 +43,6 @@ typedef struct socket_metadata {
  */
 socket_md_t* create_socket_md(int client_fd);
 
-/**
- * @brief sets the socket metadata object's server socket file descriptor.
- *
- * @param sock socket_md_t* - the socket metadata object
- * @param server_fd int - the client socket file descriptor
- */
-void set_server_sock_fd(socket_md_t* sock, int server_fd);
 
 /**
  * @brief converts a string type command to an enum type.

@@ -149,6 +149,7 @@ char* server_cmd_handler(socket_md_t* sock) {
         if (msg != NULL) {
           free(msg);
         }
+        free_socket(sock);
         exit(0);
         break;
     default:
@@ -180,7 +181,6 @@ char* rcv_args_message(socket_md_t* sock) {
     ssize_t received_len = recv(sock->client_sock_fd, client_message, sizeof(client_message), 0);
     if (received_len < 0){
       printf("Failed to receive message from client\n");
-      close(sock->client_sock_fd);
       return NULL;
     }
 

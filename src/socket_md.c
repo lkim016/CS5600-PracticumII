@@ -9,7 +9,7 @@
 #include "socket_md.h"
 
 socket_md_t* create_socket_md(int client_fd) {
-    socket_md_t* sock = (socket_md_t*) calloc(1, sizeof(socket_md_t));
+    socket_md_t* sock = (socket_md_t*)calloc(1, sizeof(socket_md_t));
     if (sock == NULL) {
         fprintf(stderr, "ERROR: dynamic memory was not able to be allocated\n");
         return NULL;
@@ -23,19 +23,12 @@ socket_md_t* create_socket_md(int client_fd) {
     sock->sec_filename = NULL;
     sock->first_filepath = NULL;
     sock->sec_filepath = NULL;
+    sock->first_file_ext = NULL;
+    sock->sec_file_ext = NULL;
 
     return sock;
 }
 
-void set_server_sock_fd(socket_md_t* sock, int server_fd) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL\n");
-        return;
-    }
-
-    sock->server_sock_fd = server_fd;
-    return;
-}
 
 commands str_to_cmd_enum(const char* str) {
     if (strcmp(str, "WRITE") == 0) return WRITE;
@@ -92,19 +85,19 @@ void set_first_filepath(socket_md_t* sock) {
     int file_path_len = 0;
     if (sock->first_dirs != NULL) {
         if(sock->first_filename != NULL) {
-            file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename) + 1;
+            file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename);
             char path[file_path_len]; // ex: data/file.txt
             sprintf(path, "%s%s", sock->first_dirs, sock->first_filename);
             sock->first_filepath = strdup(path);
         } else {
-            file_path_len = strlen(sock->first_dirs) + 1;
+            file_path_len = strlen(sock->first_dirs);
             char path[file_path_len]; // ex: data/file.txt
             sprintf(path, "%s", sock->first_dirs);
             sock->first_filepath = strdup(path);
         }
     } else {
         if(sock->first_filename != NULL) {
-            file_path_len = strlen(sock->first_filename) + 1;
+            file_path_len = strlen(sock->first_filename);
             char path[file_path_len];
             sprintf(path, "%s", sock->first_filename);
             sock->first_filepath = strdup(path);
@@ -124,12 +117,12 @@ void set_sec_filepath(socket_md_t* sock) {
     switch(sock->command) {
         case WRITE:
             if (sock->sec_dirs == NULL) {
-                file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(sock->sec_filename) + 1;
+                file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(sock->sec_filename);
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", DEFAULT_SERVER_DIR, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
             } else {
-                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename) + 1;
+                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename);
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", sock->sec_dirs, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
@@ -138,12 +131,12 @@ void set_sec_filepath(socket_md_t* sock) {
             break;
         case GET: // if local folder or file is omitted then use current folder
             if (sock->sec_dirs == NULL) {
-                file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(sock->sec_filename) + 1;
+                file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(sock->sec_filename);
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", DEFAULT_CLIENT_DIR, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
             } else {
-                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename) + 1;
+                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename);
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", sock->sec_dirs, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
@@ -188,7 +181,7 @@ void set_first_fileInfo(const char *path, socket_md_t* sock) {
                 return;
             }
             strncpy(sock->first_dirs, path, dir_len);  // Copy the directory part into first_dirs
-            // sock->first_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
+            sock->first_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
 
             // If a period is found, extract the extension
             sock->first_file_ext = strdup(last_dot + 1);  // Copy the extension into first_file_ext (without the period)
@@ -247,7 +240,7 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
                 return;
             }
             strncpy(sock->sec_dirs, path, dir_len);  // Copy the directory part into sec_dirs
-            // sock->sec_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
+            sock->sec_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
 
             // If a period is found, extract the extension
             sock->sec_file_ext = strdup(last_dot + 1);  // Copy the extension into sec_file_ext (without the period)
@@ -319,7 +312,7 @@ void free_socket(socket_md_t* sock) {
 
     if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
         close(sock->client_sock_fd);
-        printf("Closed client socket with fd: %d\n", sock->client_sock_fd);
+        printf("Closed client socket fd: %d\n", sock->client_sock_fd);
     }
 
 

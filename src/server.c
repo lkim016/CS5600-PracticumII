@@ -81,7 +81,7 @@ int main(void) {
       continue;
     }
 
-    set_server_sock_fd(server_metadata, socket_desc);
+    // set_server_sock_fd(server_metadata, socket_desc);
     printf("SERVER CONNECTION---\n");
     printf("Client connected at IP: %s and port: %i\n", 
           inet_ntoa(client_addr.sin_addr), 

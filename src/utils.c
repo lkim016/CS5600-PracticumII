@@ -63,7 +63,7 @@ int folder_not_exists_make(const char* file_path) {
         strncpy(dirs, path_copy, dir_len);  // Copy the directory part into sec_dirs
         dirs[dir_len] = '\0';  // Manually null-terminate the string
 
-        char *path = calloc(dir_len, sizeof(char));
+        char *path = (char*)calloc(strlen(dirs), sizeof(char));
         if (path == NULL) {
             // Handle memory allocation failure if needed
             fprintf(stderr, "calloc failed for setting path\n");
