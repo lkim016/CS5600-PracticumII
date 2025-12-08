@@ -14,8 +14,8 @@
 
 #include "config.h"
 
-#ifndef SOCKET_H
-#define SOCKET_H
+#ifndef SOCKET_MD_H
+#define SOCKET_MD_H
 
 typedef enum { NULL_VAL = 0, WRITE, GET, RM, STOP } commands;
 
@@ -90,14 +90,7 @@ void set_command(socket_md_t* sock, commands command);
  *
  * @param socket socket_md_t* - the pointer to the socket metadata object
  */
-void print_read_file_info(socket_md_t* sock);
-
-/**
- * @brief prints out the socket metadata object write file info.
- *
- * @param socket socket_md_t* - the pointer to the socket metadata object
- */
-void print_write_file_info(socket_md_t* sock);
+void print_sock_metada(socket_md_t* sock);
 
 /**
  * @brief sets the socket metadata object read file's filepath member.

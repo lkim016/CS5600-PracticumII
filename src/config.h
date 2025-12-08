@@ -3,19 +3,19 @@
 #endif
 
 #define CHUNK_SIZE 4096
-
-// port number
-
+/*
+// server address and port number
 #define PORT 8080
-// server address
 #define SERVER_IP "192.168.45.67"
+*/
+
+// local address and port number
+#define PORT 5000
+#define SERVER_IP "127.0.0.1"
 
 #define SERVER_BACKLOG 100
 
-/*
-#define PORT 5000
-#define SERVER_IP "127.0.0.1"
-*/
+
 #define LITERAL_DELIM ','
 #define DELIM ","
 
@@ -26,9 +26,9 @@
 #endif
 
 #ifdef _WIN32
-    #define SINGLE_PATH_DELIMITER '\\'
+    #define LITERAL_PATH_DELIMITER '\\'
 #else
-    #define SINGLE_PATH_DELIMITER '/'
+    #define LITERAL_PATH_DELIMITER '/'
 #endif
 
 #define DEFAULT_CLIENT_DIR "client_data/"

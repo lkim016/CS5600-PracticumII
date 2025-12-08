@@ -25,97 +25,60 @@ char* dyn_msg(unsigned long id, const char* part1, const char* part2) {
 
 int folder_not_exists_make(const char* file_path) {
     if (file_path == NULL) {
-    fprintf(stderr, "Invalid path!\n");
-    return -1;
-}
-
-// Find the last occurrence of the directory separator
-const char *last_slash = strrchr(file_path, SINGLE_PATH_DELIMITER);
-    if (last_slash == NULL) {
-        fprintf(stderr, "Invalid path, no directory separator found.\n");
+        fprintf(stderr, "Invalid path!\n");
         return -1;
     }
 
-    // Calculate directory path length and allocate memory
-    size_t dir_len = last_slash - file_path;
-    char *dirs = (char *)malloc(dir_len + 1);
-    if (dirs == NULL) {
-        perror("malloc failed for dirs");
-        return -1;
-    }
-
-    // Copy directory path and null-terminate
-    memcpy(dirs, file_path, dir_len);
-    dirs[dir_len] = '\0';
-
-    // Allocate initial path buffer
-    size_t path_capacity = dir_len + 1;
-    char *path = (char *)malloc(path_capacity);
-    if (path == NULL) {
-        perror("malloc failed for path");
-        free(dirs);
-        return -1;
-    }
-    path[0] = '\0';
-
-    // Tokenize and create directories
-    char *saveptr = NULL;
-    char *token = strtok_r(dirs, "/", &saveptr);
-    int first_token = 1;
-
-    while (token != NULL) {
-        // Calculate required size
-        size_t token_len = strlen(token);
-        size_t current_len = strlen(path);
-        size_t required_size = current_len + token_len + 2; // +1 for '/', +1 for '\0'
-
-        // Reallocate if needed
-        if (required_size > path_capacity) {
-            path_capacity = required_size;
-            char *temp = realloc(path, path_capacity);
-            if (temp == NULL) {
-                perror("realloc failed for path");
-                free(path);
-                free(dirs);
-                return -1;
-            }
-            path = temp;
-        }
-
-        // Append delimiter if not first token
-        if (!first_token) {
-            path[current_len++] = SINGLE_PATH_DELIMITER;
-            path[current_len] = '\0';
-        }
-        first_token = 0;
-
-        // Append token
-        strcat(path, token);
-
-        // Create directory if it doesn't exist
-        struct stat st;
-        if (stat(path, &st) != 0) {
-            // Directory doesn't exist, create it
-            if (mkdir(path, 0755) != 0 && errno != EEXIST) {
-                perror("mkdir failed");
-                fprintf(stderr, "Failed to create directory: %s\n", path);
-                free(path);
-                free(dirs);
-                return -1;
-            }
-        } else if (!S_ISDIR(st.st_mode)) {
-            // Path exists but is not a directory
-            fprintf(stderr, "Path exists but is not a directory: %s\n", path);
-            free(path);
-            free(dirs);
+    const char *last_slash = strrchr(file_path, LITERAL_PATH_DELIMITER);
+    if (last_slash != NULL) {
+        // Copy the directory part
+        size_t dir_len = last_slash - file_path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
+        char* dirs = (char*)calloc(dir_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
+        if (dirs == NULL) {
+            // Handle memory allocation failure if needed
+            fprintf(stderr, "calloc failed for first_dirs\n");
             return -1;
         }
+        strncpy(dirs, file_path, dir_len);  // Copy the directory part into sec_dirs
 
-        token = strtok_r(NULL, "/", &saveptr);
+        char *path = calloc(strlen(dirs + 1), sizeof(char));
+        int pathi = 0;
+        char *token = strtok(dirs, PATH_DELIMITER);
+        while (token != NULL) {
+            // printf("DIR TOKEN: %s\n", token);
+            int c = 0;
+            while(token[c] != '\0') {
+                path[pathi++] = token[c++];
+            }
+            path[pathi] = LITERAL_PATH_DELIMITER;
+            path[strlen(path)] = '\0';
+
+            // printf("COMB PATH: %s\n", path);
+            // Create directory if it doesn't exist
+            struct stat st;
+            if (stat(path, &st) != 0) {
+                // Directory doesn't exist, create it
+                if (mkdir(path, 0755) != 0 && errno != EEXIST) {
+                    perror("mkdir failed");
+                    fprintf(stderr, "Failed to create directory: %s\n", path);
+                    free(dirs);
+                    free(path);
+                    return -1;
+                }
+            } else if (!S_ISDIR(st.st_mode)) {
+                // Path exists but is not a directory
+                fprintf(stderr, "Path exists but is not a directory: %s\n", path);
+                free(dirs);
+                free(path);
+                return -1;
+            }
+
+            token = strtok(NULL, PATH_DELIMITER);
+        }
+        free(dirs);
+        free(path);
     }
 
-    free(dirs);
-    free(path);
     return 0;
 }
 

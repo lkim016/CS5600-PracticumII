@@ -75,21 +75,16 @@ void set_command(socket_md_t* sock, commands command) {
 }
 
 
-void print_read_file_info(socket_md_t* sock) {
+void print_sock_metada(socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         return;
     }
-    printf("Filepath: %s, Dirs: %s, Filename: %s, File Ext: %s\n", sock->first_filepath, sock->first_dirs, sock->first_filename, sock->first_file_ext);
-    return;
-}
-
-void print_write_file_info(socket_md_t* sock) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL\n");
-        return;
-    }
-    printf("Filepath: %s, Dirs: %s, Filename: %s, File Ext: %s\n", sock->sec_filepath, sock->sec_dirs, sock->sec_filename, sock->sec_file_ext);
+    printf("Command: %s\n", cmd_enum_to_str(sock->command));
+    printf("First Filepath: %s, First Dirs: %s, First Filename: %s, First File Ext: %s\n", sock->first_filepath, sock->first_dirs,
+        sock->first_filename, sock->first_file_ext);
+    printf("Sec Filepath: %s, Sec Dirs: %s, Sec Filename: %s, Sec File Ext: %s\n", sock->sec_filepath, sock->sec_dirs,
+        sock->sec_filename, sock->sec_file_ext);
     return;
 }
 
@@ -132,7 +127,7 @@ void set_first_filepath(socket_md_t* sock) {
 void set_sec_filepath(socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
-        exit(1);
+        return;
     }
 
     int file_path_len = 0;
@@ -180,10 +175,16 @@ Assumptions:
 void set_first_fileInfo(const char *path, socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
-        exit(1);
+        return;
+    }
+
+    // if sec file path info is missing from command then make from first file path info
+    if (path == NULL) {
+        fprintf(stderr, "ERROR: first path from arv[3] is NULL\n");
+        return;
     }
     // Find the last occurrence of the directory separator
-    const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
+    const char *last_slash = strrchr(path, LITERAL_PATH_DELIMITER);
     const char *last_dot = strrchr(path, '.');  // Find the last period in the filename
     if (last_slash != NULL) {
         // Separate out the extension from the filename
@@ -193,8 +194,8 @@ void set_first_fileInfo(const char *path, socket_md_t* sock) {
             sock->first_dirs = (char*)calloc(dir_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
             if (sock->first_dirs == NULL) {
                 // Handle memory allocation failure if needed
-                perror("calloc failed for first_dirs\n");
-                exit(1);
+                fprintf(stderr, "calloc failed for first_dirs\n");
+                return;
             }
             strncpy(sock->first_dirs, path, dir_len);  // Copy the directory part into first_dirs
             // sock->first_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
@@ -234,16 +235,15 @@ void set_first_fileInfo(const char *path, socket_md_t* sock) {
 void set_sec_fileInfo(const char *path, socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
-        exit(1);
+        return;
     }
     // if sec file path info is missing from command then make from first file path info
-    // if (path == NULL) {
-    //     sock->sec_dirs = strdup(sock->first_dirs);
-    //     sock->sec_filename = strdup(sock->first_filename);
-    //     return;
-    // }
+    if (path == NULL) {
+        fprintf(stderr, "second path from arv[4] is NULL\n");
+        return;
+    }
     // Find the last occurrence of the directory separator
-    const char *last_slash = strrchr(path, SINGLE_PATH_DELIMITER);
+    const char *last_slash = strrchr(path, LITERAL_PATH_DELIMITER);
     const char *last_dot = strrchr(path, '.');  // Find the last period in the filename
     if (last_slash != NULL) {
         // Separate out the extension from the filename
@@ -253,8 +253,8 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
             sock->sec_dirs = (char*)calloc(dir_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
             if (sock->sec_dirs == NULL) {
                 // Handle memory allocation failure if needed
-                perror("calloc failed for first_dirs\n");
-                exit(1);
+                fprintf(stderr, "calloc failed for first_dirs\n");
+                return;
             }
             strncpy(sock->sec_dirs, path, dir_len);  // Copy the directory part into sec_dirs
             // sock->sec_dirs[dir_len] = '\0';  // Null-terminate (not strictly necessary as calloc initializes memory to zero)
@@ -332,10 +332,6 @@ void free_socket(socket_md_t* sock) {
         printf("Closed client socket with fd: %d\n", sock->client_sock_fd);
     }
 
-    if (sock->server_sock_fd >= 0) {
-        close(sock->server_sock_fd);
-        printf("Closed server socket with fd: %d\n", sock->server_sock_fd);
-    }
 
     free(sock);
 }

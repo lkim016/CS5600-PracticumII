@@ -7,18 +7,23 @@ TEST_SRC_FILES = $(SRC_FILES)
 
 all: server client
 
-server: $(SRC_FILES) src/server.c
+server: $(SRC_FILES) src/server_utils.c src/server.c
 	$(CC) $(CFLAGS) $^ -o server
 	chmod +x ./server
 
-client: $(SRC_FILES) src/client.c
+client: $(SRC_FILES) src/client_utils.c src/client.c
 	$(CC) $(CFLAGS) $^ -o rfs
 	chmod +x ./rfs
 
-test: $(TEST_SRC_FILES) tests/client_test.c
-	$(CC) $(CFLAGS) $^ -o test
-	./test
+test_client: $(TEST_SRC_FILES) tests/client_test.c
+	$(CC) $(CFLAGS) $^ -o test_client
+	./test_client
+
+test_server: $(TEST_SRC_FILES) tests/client_test.c
+	$(CC) $(CFLAGS) $^ -o test_server
+	./test_server
 
 clean:
 	rm -f rfs
 	rm -f server
+	rm -f test*
