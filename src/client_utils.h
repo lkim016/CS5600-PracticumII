@@ -16,12 +16,18 @@
 #include "config.h"
 #include "socket_md.h"
 #include "utils.h"
+#include "socket_send.h"
+#include "socket_rcv.h"
 
 #ifndef CLIENT_UTILS_H
 #define CLIENT_UTILS_H
 
 /**
  * @brief handles the CLI args commands for the client
+ * WRITE - get read file size and send to server
+ * GET 
+ * RM
+ * STOP
  *
  * @param socket socket_md_t* - the pointer to the client socket metadata object
  * @return int -> 1 for success, -1 for error, 0 for fail
@@ -51,8 +57,11 @@ char* build_message(int argc, char* argv[]);
  *
  * @param sock socket_md_t* - the pointer to the client socket metadata object
  * @param message char* - constructed message of the CLI args
- * return int -> 0 for success, 1 for fail result
+ * return ssize_t -> signed size of bytes send()
  */
-int send_args_message(socket_md_t* sock, char* message);
+ssize_t send_args_message(socket_md_t* sock, char* message);
+
+
+void __print_server_resp(const char* response);
 
 #endif

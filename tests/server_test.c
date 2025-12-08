@@ -13,5 +13,6 @@
 int main(void) {
     // TEST: happy case - design test to multi-thread call handle_stop to see if only one thread will change it
     
+    // TEST: edge case - ./rfs WRITE data.txt -- there is no such file
     return 0;
 }

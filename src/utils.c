@@ -1,5 +1,5 @@
 /**
- * @file utils.c / source code for program utilities.
+ * @file utils.c / source code for file/folder utilities.
  * @authors Lori Kim / CS5600 / Northeastern University
  * @brief
  * @date Dec 5, 2025 / Fall 2025
@@ -8,45 +8,71 @@
 
 #include "utils.h"
 
-pthread_mutex_t utils_mutex = PTHREAD_MUTEX_INITIALIZER;  // Filesystem operations mutex
+pthread_mutex_t utils_mutex = PTHREAD_MUTEX_INITIALIZER;  // Filesystem operations mutex - maybe change name to files_mutex
 
-// need to free() result
-char* dyn_msg(unsigned long id, const char* part1, const char* part2) {
-    size_t len = strlen(part1) + strlen(part2) + 3; // 1 for space, 1 for newline, 1 for null terminator
-    char* msg_ptr = calloc(len, sizeof(char));
-    if (msg_ptr == NULL) {
-        perror("Memory allocation failed\n");
-        return NULL;
-    }
-    sprintf(msg_ptr, "Thread ID#%lu - %s %s\n", id, part1, part2);
-    return msg_ptr;
+
+/*
+file_exists
+*/
+bool file_exists(const char* file) {
+    return access(file, F_OK) == 0;
 }
 
 
+/*
+get_file_size
+*/
+long get_file_size(const char* filepath) {
+    if(filepath == NULL) {
+        return -1;
+    }
+
+    struct stat st;
+    if (stat(filepath, &st) == 0) {
+        if (st.st_size > LONG_MAX) {
+            fprintf(stderr, "File too large to fit in long\n");
+            return -1;
+        }
+        return (long)st.st_size;
+    } else {
+        perror("stat failed");
+        return -1;
+    }
+}
+
+/*
+folder_not_exists_make
+*/
 int folder_not_exists_make(const char* file_path) {
     if (file_path == NULL) {
         fprintf(stderr, "Invalid path!\n");
         return -1;
     }
 
-    const char *last_slash = strrchr(file_path, LITERAL_PATH_DELIMITER);
+    char *path_copy = strdup(file_path);
+    const char *last_slash = strrchr(path_copy, LITERAL_PATH_DELIMITER);
     if (last_slash != NULL) {
         // Copy the directory part
-        size_t dir_len = last_slash - file_path + 1;  // pointer arithmetic calculating the length of the directory part of the path string
+        size_t dir_len = last_slash - path_copy + 1;  // pointer arithmetic calculating the length of the directory part of the path string
         char* dirs = (char*)calloc(dir_len + 1, sizeof(char)); // Allocate memory for the directory part, including the null terminator
         if (dirs == NULL) {
             // Handle memory allocation failure if needed
-            fprintf(stderr, "calloc failed for first_dirs\n");
+            fprintf(stderr, "calloc failed for setting dirs\n");
             return -1;
         }
-        strncpy(dirs, file_path, dir_len);  // Copy the directory part into sec_dirs
+        strncpy(dirs, path_copy, dir_len);  // Copy the directory part into sec_dirs
         dirs[dir_len] = '\0';  // Manually null-terminate the string
 
-        char *path = calloc(dir_len + 1, sizeof(char));
+        char *path = calloc(dir_len, sizeof(char));
+        if (path == NULL) {
+            // Handle memory allocation failure if needed
+            fprintf(stderr, "calloc failed for setting path\n");
+            return -1;
+        }
         int pathi = 0;
         char *token = strtok(dirs, PATH_DELIMITER);
         while (token != NULL) {
-            // printf("DIR TOKEN: %s\n", token);
+            printf("DIR TOKEN: %s\n", token);
             int c = 0;
             while(token[c] != '\0') {
                 path[pathi++] = token[c++];
@@ -54,7 +80,7 @@ int folder_not_exists_make(const char* file_path) {
             path[pathi] = LITERAL_PATH_DELIMITER;
             path[pathi+1] = '\0';
 
-            // printf("COMB PATH: %s\n", path);
+            printf("COMB PATH: %s\n", path);
             // Create directory if it doesn't exist
             struct stat st;
             if (stat(path, &st) != 0) {
@@ -63,6 +89,7 @@ int folder_not_exists_make(const char* file_path) {
                     if (errno != EEXIST) {
                         perror("mkdir failed");
                         fprintf(stderr, "Failed to create directory: %s\n", path);
+                        free(path_copy);
                         free(dirs);
                         free(path);
                         return -1;
@@ -71,6 +98,7 @@ int folder_not_exists_make(const char* file_path) {
             } else if (!S_ISDIR(st.st_mode)) {
                 // Path exists but is not a directory
                 fprintf(stderr, "Path exists but is not a directory: %s\n", path);
+                free(path_copy);
                 free(dirs);
                 free(path);
                 return -1;
@@ -81,7 +109,8 @@ int folder_not_exists_make(const char* file_path) {
         free(dirs);
         free(path);
     }
-
+    printf("Dir check complete\n");
+    free(path_copy);
     return 0;
 }
 
@@ -137,7 +166,9 @@ void remove_directory(const char *path) {
     closedir(dir);
 }
 
-
+/*
+rm_file_or_folder
+*/
 int rm_file_or_folder(socket_md_t* sock) {
     const char* filepath = sock->first_filepath;
     const char* filename = sock->first_filename;
@@ -223,184 +254,4 @@ int rm_file_or_folder(socket_md_t* sock) {
 }
 
 
-int send_msg(int sock_fd, const char* message) {
-  // printf("%s\n", server_message); // check
-  ssize_t sent_size = send(sock_fd, message, strlen(message), 0);
-  if (sent_size < 0) {
-    printf("Can't send message\n");
-    return -1;
-  }
-  return sent_size;
-}
-
-
-int send_file(socket_md_t* sock, int sock_fd) {
-    if (sock == NULL) {
-        fprintf(stderr, "WARNING: file send - socket is NULL\n");
-        return -1;
-    }
-    if (sock->first_filepath == NULL) {
-        fprintf(stderr, "WARNING: file send - read filename is NULL\n");
-        return -1;
-    }
-    if (sock_fd < 0) {
-        fprintf(stderr, "WARNING: file send - socket file descriptor is invalid\n");
-        return -1;
-    }
-
-    // Lock the socket mutex to ensure thread-safety when working with the file and socket
-    pthread_mutex_lock(&utils_mutex);
-    // printf("Local File path: %s\n", file_path);
-    FILE *file = fopen(sock->first_filepath, "rb"); // "rb" for read binary
-    if (file == NULL) {
-        fprintf(stderr, "WARNING: file send - Issue opening read file\n");
-        pthread_mutex_unlock(&utils_mutex);
-        return -1;
-    }
-
-    // Get the size of the file
-    if (fseek(file, 0, SEEK_END) != 0) {
-        fprintf(stderr, "WARNING: file send - Seeking to end of read file\n");
-        pthread_mutex_unlock(&utils_mutex);
-        fclose(file);
-        return -1;
-    }
-    long file_size = ftell(file);
-    if(file_size < 0) {
-        fprintf(stderr, "WARNING: file send - Getting read file size\n");
-        pthread_mutex_unlock(&utils_mutex);
-        fclose(file);
-        return -1;
-    }
-    if (fseek(file, 0, SEEK_SET) != 0) { // reset the file pointer to the beginning
-        fprintf(stderr, "WARNING: file send - Seeking to start of read file\n");
-        pthread_mutex_unlock(&utils_mutex);
-        fclose(file);
-        return -1;
-    }
-    
-    // send the file size
-    uint32_t size = htonl(file_size);
-    if (send(sock_fd, &size, sizeof(size), 0) < 0) {
-        fprintf(stderr, "WARNING: file send - Sending file size\n");
-        pthread_mutex_unlock(&utils_mutex);
-        fclose(file);
-        return -1;
-    }
-
-    // send the file data
-    char buffer[CHUNK_SIZE]; // buffer to hold file chunks
-    size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, CHUNK_SIZE, file)) > 0) { // reads the given amount of data (CHUNK_SIZE) from the file into the buffer
-        size_t total_sent = 0;
-
-        while (total_sent < bytes_read) {
-            size_t sent = send(sock_fd, buffer + total_sent,
-                                bytes_read - total_sent, 0);
-
-            if (sent < 0) {
-                fprintf(stderr, "ERROR: file send - Unable to send message\n");
-                pthread_mutex_unlock(&utils_mutex);
-                // handle error (disconnect, etc.)
-                break;
-            }
-
-            printf("Bytes Sent: %lu\n", sent);
-
-            total_sent += sent;
-        }
-    }
-
-    fclose(file);
-    pthread_mutex_unlock(&utils_mutex);
-    return 0;
-}
-
-int rcv_file(socket_md_t* sock, int sock_fd) {
-    if (sock == NULL) {
-        fprintf(stderr, "WARNING: file receive - Socket is NULL\n");
-        return -1;
-    }
-    if (sock->sec_filepath == NULL) {
-        fprintf(stderr, "WARNING: file receive - Write filename is NULL\n");
-        return -1;
-
-    }
-    if (sock_fd < 0) {
-        fprintf(stderr, "WARNING: file receive - Socket file descriptor is invalid\n");
-        return -1;
-    }
-
-    // Locking the mutex to protect shared resources like socket descriptor and metadata
-    pthread_mutex_lock(&utils_mutex);
-
-    uint32_t size;
-    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
-        perror("ERROR: file receive - Error receiving file size\n");
-        pthread_mutex_unlock(&utils_mutex);
-        return -1;
-    }
-    size = ntohl(size);
-    printf("File Size: %u\n", size);
-
-    if (size == 0) {
-        printf("ERROR: file receive - Received file size is 0\n");
-        pthread_mutex_unlock(&utils_mutex);
-        return -1;
-    }
-
-    FILE *out_file = fopen(sock->sec_filepath, "wb");
-    if (out_file == NULL) {
-        perror("ERROR: file receive - Error opening write file\n");
-        pthread_mutex_unlock(&utils_mutex);
-        return -1;
-    }
-
-    char buffer[CHUNK_SIZE];
-    ssize_t received;
-    uint32_t total_received = 0;  // To track total bytes received
-
-    // Loop through and receive the file in chunks
-    while (total_received < size) {
-        received = recv(sock_fd, buffer, CHUNK_SIZE, 0);
-        if (received < 0) {
-            perror("ERROR: file receive - Error receiving data\n");
-            fclose(out_file);
-            pthread_mutex_unlock(&utils_mutex);
-            return -1;
-        } else if (received == 0) {
-            // No more data, but the total received doesn't match the expected size
-            fprintf(stderr, "Warning: file receive - Connection closed prematurely\n");
-            break;
-        }
-
-        // Write the received data to the file
-        size_t written = fwrite(buffer, 1, received, out_file);
-        if (written != received) {
-            perror("ERROR: file receive - Error writing to file\n");
-            fclose(out_file);
-            pthread_mutex_unlock(&utils_mutex);
-            return -1;
-        }
-
-        total_received += received;
-
-        // Check if we have received all the expected bytes
-        if (total_received > size) {
-            fprintf(stderr, "ERROR: file receive - More data received than expected\n");
-            fclose(out_file);
-            pthread_mutex_unlock(&utils_mutex);
-            return -1;
-        }
-
-        // Optionally print progress (to debug or monitor)
-        printf("Received %u/%u bytes\n", total_received, size);
-    }
-
-    fclose(out_file);
-
-    printf("File received successfully!\n");
-    pthread_mutex_unlock(&utils_mutex);
-    return received;
-}
 

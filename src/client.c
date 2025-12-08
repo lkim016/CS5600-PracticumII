@@ -63,8 +63,9 @@ int main(int argc, char* argv[]) {
     }
 
     char* msg_to_server = build_message(argc, argv);
-    int cmd_sent_status = send_args_message(client_metadata, msg_to_server);
-    if (cmd_sent_status == 0) {
+    ssize_t cmd_sent_status = send_args_message(client_metadata, msg_to_server);
+    
+    if (cmd_sent_status > 0) {
       // Set server socket metadata
       set_client_sock_metadata(client_metadata, argc, argv);
 

@@ -93,18 +93,19 @@ int main(void) {
     
     printf("Command: %s, Send Filename: %s, Receive Filename: %s\n", cmd_enum_to_str(server_metadata->command), server_metadata->first_filepath, server_metadata->sec_filepath);
 
+    char * smd = server_cmd_handler(server_metadata);
+
     // Create reader and writer threads:
-    pthread_t thread;
+    // pthread_t thread;
 
-    // cmd hanling thread
-    if (pthread_create(&thread, NULL, server_cmd_handler, (void*)server_metadata) != 0) {
-        perror("Failed to create reader thread\n");
-        close(server_metadata->client_sock_fd);
-        continue;
-    }
+    // // cmd hanling thread
+    // if (pthread_create(&thread, NULL, server_cmd_handler, (void*)server_metadata) != 0) {
+    //     perror("Failed to create reader thread\n");
+    //     close(server_metadata->client_sock_fd);
+    //     continue;
+    // }
 
-    pthread_detach(thread); // Detach the thread to manage its own cleanup
-
+    // pthread_detach(thread); // Detach the thread to manage its own cleanup
   }
 
   close(socket_desc);

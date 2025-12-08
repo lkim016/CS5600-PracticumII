@@ -8,13 +8,6 @@
 
 #include "client_utils.h"
 
-/*
-print_server_resp
-*/
-void print_server_resp(char* response) {
-  printf("Server's response:\n%s\n", response);
-}
-
 
 /*
 client_cmd_handler
@@ -28,28 +21,42 @@ void client_cmd_handler(socket_md_t* sock) {
   // Clean buffers:
   char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
   memset(server_message,'\0',sizeof(server_message));
-  const char* msg = NULL;
+  // const char* msg = NULL;
   // handle different commands
   switch (sock->command) {
     case WRITE:
-      // send the file to server
-      int sent_status = send_file(sock, sock->client_sock_fd);
+      const char* filepath = sock->first_filepath;
+      int sock_fd = sock->client_sock_fd;
+      // check if file_exits - if yes then send and receive
+      long file_size = get_file_size(filepath);
+      printf("Long File Size: %ld\n", file_size);
+      if (file_exists(filepath) == 1 && file_size > 0) {
+          ssize_t size_sent_bytes = send_file_size(sock_fd, file_size);
+          printf("Client: File exists.\n");
+          // send the file to server
+          ssize_t file_sent_bytes = send_file(filepath, sock_fd);
+          printf("File Sent Bytes: %ld\n", file_sent_bytes);
+          if (file_sent_bytes > 0) {
+            // Wait for acknowledgment from the other socket before declaring success
+            ssize_t msg_recv_bytes = recv(sock_fd, server_message, MSG_SIZE, 0);
+            printf("Message Received Bytes: %ld\n", msg_recv_bytes);
+            if (msg_recv_bytes < 0) {
+                perror("Client: Error receiving acknowledgment from server\n");
+                return;
+            } else if (msg_recv_bytes == 0) {
+                printf("Client: No acknowledgement receive\n");
+                return;
+            }
 
-      if (sent_status == 0) {
-        // Wait for acknowledgment from the other socket before declaring success
-        ssize_t recv_bytes = recv(sock->client_sock_fd, server_message, sizeof(server_message), 0);
-        if (recv_bytes < 0) {
-            perror("Error receiving acknowledgment from server");
-            return;
-        } else if (recv_bytes == 0) {
-            printf("Server closed connection\n");
-            return;
+            __print_server_resp(server_message);
         }
-
-        print_server_resp(server_message);
+      } else {
+          fprintf(stderr, "Client: File does not exist.\n");
+          ssize_t size_sent_bytes = send_file_size(sock_fd, file_size);
       }
       
       break;
+  /*
     case GET:
       int folder_exists = folder_not_exists_make(sock->sec_filepath);
       if (folder_exists == 0) {
@@ -81,6 +88,7 @@ void client_cmd_handler(socket_md_t* sock) {
         print_server_resp(server_message);
 
       break;
+    */
     case STOP:
       // Receive the server's response:
       if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
@@ -154,17 +162,25 @@ char* build_message(int argc, char* argv[]) {
 /*
 send_args_message
 */
-int send_args_message(socket_md_t* sock, char* message) {
+ssize_t send_args_message(socket_md_t* sock, char* message) {
 
     // send client message - this sends the commands
-    int sent_size = send_msg(sock->client_sock_fd, message);
+    ssize_t sent_size = send_msg(sock->client_sock_fd, message);
     free(message);
 
     if (sent_size > 0) {
-      printf("Message of size %d successfully sent\n", sent_size);
-      return 0;
+      printf("Message of size %ld successfully sent\n", sent_size);
+      return sent_size;
     } else {
       perror("Failed to send message");
-      return 1;
+      return -1;
     }
+}
+
+
+/*
+__print_server_resp
+*/
+void __print_server_resp(const char* response) {
+  printf("Client:\n Server Response: %s\n", response);
 }
