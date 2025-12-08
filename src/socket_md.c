@@ -311,6 +311,7 @@ void free_socket(socket_md_t* sock) {
     }
 
     if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
+        shutdown(sock->client_sock_fd, SHUT_RDWR); // disables both sends and receives
         close(sock->client_sock_fd);
         printf("Closed client socket fd: %d\n", sock->client_sock_fd);
     }

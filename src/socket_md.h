@@ -11,19 +11,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #include "config.h"
+#include "protocol.h"
 
 #ifndef SOCKET_MD_H
 #define SOCKET_MD_H
 
-typedef enum { NULL_VAL = 0, WRITE, GET, RM, STOP } commands;
 
 /**
  * @brief Represents a socket metadata.
  */
 typedef struct socket_metadata {
     int client_sock_fd; // file descriptor for the client socket
+    uint32_t file_size; // file size of file to be sent
     commands command; // execution commands from the program CLI args
     char *first_dirs; // parent dir of the file being read
     char *first_filename; // filename of the file being read

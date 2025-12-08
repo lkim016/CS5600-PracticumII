@@ -36,11 +36,11 @@ void* server_cmd_handler(void* arg) {
       return NULL;
   }
 */
-char* server_cmd_handler(socket_md_t* sock) {
+void* server_cmd_handler(socket_md_t* sock) {
   pthread_t thread_id = pthread_self();
   printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
   unsigned long threadID = (unsigned long)thread_id;
-  print_sock_metada(sock); // FIXME: maybe delete
+
 
   // Clean buffers:
   char client_message[MSG_SIZE];
@@ -50,31 +50,43 @@ char* server_cmd_handler(socket_md_t* sock) {
     case WRITE:
         const char* filepath = sock->sec_filepath;
         int sock_fd = sock->client_sock_fd;
-        // check if file exists - receive a file size from the client
-        uint32_t file_size = rcv_file_size(sock_fd);
+
         pthread_mutex_lock(&file_mutex);  // Lock filesystem
         int folder_exists = folder_not_exists_make(filepath);
-        pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-        if (file_size > 0) { // && folder_exists == 0) {
-            // if file_size received is valid
-            // if it does then need to get file and rename it to a timestamped version
-            ssize_t file_rcvd_bytes = rcv_file(filepath, sock_fd, file_size);
-            
-            if (file_rcvd_bytes < 0 ) {
-              msg = build_send_msg(threadID, "Server: Error receiving file", "");
-            } else {
-              msg = build_send_msg(threadID,"Server: File sent successfully!", "");
-            }
-        } else {
-              if (folder_exists < 0) {
-                  msg = build_send_msg(threadID, "Server: Error folder was not able to be made", "");
-              }
-              msg = build_send_msg(threadID, "Server: Error file size sent is 0", "");
-        }
+        if (folder_exists == 0) {
+            printf("Path was created\n");
 
-        if (send_msg(sock_fd, msg) < 0) {
-            perror("Failed to send response to client\n");
         }
+        pthread_mutex_unlock(&file_mutex);  // Lock filesystem
+
+        uint32_t size = sock->file_size;
+        char* sec_filepath = sock->sec_filepath;
+        printf("Receiving file (%u bytes) to: %s\n", size, sec_filepath);
+        ssize_t file_rcvd_bytes = rcv_file(sock_fd, sec_filepath, size);
+
+        msg = build_send_msg(threadID,"Server: File sent successfully!", "");
+        
+        // if (file_rcvd_bytes < 0 ) {
+        //       msg = build_send_msg(threadID, "Server: Error receiving file", "");
+        //     } else {
+              
+        //     }
+        // } else {
+        //       if (folder_exists < 0) {
+        //           msg = build_send_msg(threadID, "Server: Error folder was not able to be made", "");
+        //       }
+        //       msg = build_send_msg(threadID, "Server: Error file size sent is 0", "");
+
+        // if (file_size > 0) { // && folder_exists == 0) {
+        //     // if file_size received is valid
+        //     // if it does then need to get file and rename it to a timestamped version
+        //     ssize_t file_rcvd_bytes = rcv_file(filepath, sock_fd, file_size);
+            
+        // }
+
+        // if (send_msg(sock_fd, msg) < 0) {
+        //     perror("Failed to send response to client\n");
+        // }
 
         printf("%s\n", msg);
 
@@ -168,17 +180,19 @@ char* server_cmd_handler(socket_md_t* sock) {
 rcv_args_message
 NOTE: free() ptr after use
 */
-char* rcv_args_message(socket_md_t* sock) {
-    if (sock == NULL) {
+/*
+char* rcv_args_message(int sock_fd) {
+    if (sock_fd <= 0) {
         fprintf(stderr, "server's socket metadata is NULL\n");
         return NULL;
     }
+    
     // Clean buffers:
     char client_message[MSG_SIZE];
     memset(client_message, '\0', sizeof(client_message));
     // Receive client's message:
     
-    ssize_t received_len = recv(sock->client_sock_fd, client_message, sizeof(client_message), 0);
+    ssize_t received_len = recv(sock_fd, client_message, sizeof(client_message), 0);
     if (received_len < 0){
       printf("Failed to receive message from client\n");
       return NULL;
@@ -189,10 +203,11 @@ char* rcv_args_message(socket_md_t* sock) {
         perror("malloc failed for server_message\n");
         return NULL;
     }
-
+    ssize_t ready_sent_bytes = send_msg(sock_fd, "Command Message Received\n");
     printf("Msg from client: %s\n", message);
     return message;
 }
+    */
 
 
 /*

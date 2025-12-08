@@ -6,32 +6,80 @@
  *
 */
 
+#include "protocol.h"
 #include "socket_rcv.h"
 
 pthread_mutex_t rcv_mutex = PTHREAD_MUTEX_INITIALIZER; // FIXME: maybe change name
+// #define MAX_FILE_SIZE (1024UL * 1024 * 1024)  // 1 GB sanity limit
+
+
+ssize_t recv_all(int sock_fd, void *buffer, size_t length) {
+    size_t total = 0;
+    char *buf = buffer;
+
+    while (total < length) {
+        ssize_t n = recv(sock_fd, buf + total, length - total, 0);
+        if (n <= 0) return n; // error or disconnect
+        total += n;
+    }
+    return total;
+}
 
 
 /*
 rcv_file_size
 */
-uint32_t rcv_file_size(int sock_fd) {
-    if (sock_fd < 0) {
-        fprintf(stderr, "WARNING: socket file descriptor is invalid for receiving file size\n");
-        return 0;
+void rcv_request(socket_md_t* sock) {
+    if (sock == NULL) {
+        fprintf(stderr, "Socket metadata is NULL for receiving request\n");
+        return;
     }
-    uint32_t size;
-    if (recv(sock_fd, &size, sizeof(size), 0) <= 0) {
-        perror("ERROR: Error receiving file size\n");
-        return 0;
+
+    int sock_fd = sock->client_sock_fd;
+    struct header h;
+
+    if (recv_all(sock_fd, &h, sizeof(h)) <= 0) {
+        printf("Client disconnected\n");
+        return;
     }
-    size = ntohl(size);
-    return size;
+
+    sock->command = ntohl(h.command);
+    uint32_t fpath1_len = ntohl(h.fpath1_len);
+    uint32_t fpath2_len = ntohl(h.fpath2_len);
+    sock->file_size = ntohl(h.file_size);
+
+    /* Read filenames */
+    char* fpath1 = malloc(fpath1_len + 1);
+    char* fpath2 = malloc(fpath2_len + 1);
+
+    recv_all(sock_fd, fpath1, fpath1_len);
+    fpath1[fpath1_len] = '\0';
+
+    recv_all(sock_fd, fpath2, fpath2_len);
+    fpath2[fpath2_len] = '\0';
+
+
+    set_first_fileInfo(fpath1, sock);
+    set_first_filepath(sock);
+    if (fpath2 != NULL) {
+        set_sec_fileInfo(fpath2, sock);
+    } else {
+        set_sec_fileInfo(fpath1, sock);
+    }
+    set_sec_filepath(sock);
+
+    print_sock_metada(sock); // FIXME: maybe delete
+
+    printf("Command: %u\n", sock->command);
+    printf("Filename1: %s\n", sock->first_filepath);
+    printf("Filename2: %s\n", sock->sec_filepath);
+
 }
 
 /*
 rcv_file
 */
-ssize_t rcv_file(const char* sec_filepath, int sock_fd, uint32_t size) {
+ssize_t rcv_file(int sock_fd, const char* sec_filepath, uint32_t size) {
 
     if (sec_filepath == NULL) {
         fprintf(stderr, "WARNING: file receive - Write filename is NULL\n");
@@ -56,26 +104,25 @@ ssize_t rcv_file(const char* sec_filepath, int sock_fd, uint32_t size) {
     }
 
     char buffer[CHUNK_SIZE];
-    ssize_t rcvd_bytes;
-    uint32_t total_received = 0;  // To track total bytes received
+    ssize_t total_received = 0;  // To track total bytes received
 
     // Loop through and receive the file in chunks
     while (total_received < size) {
-        rcvd_bytes = recv(sock_fd, buffer, CHUNK_SIZE, 0);
+        size_t bytes_to_recv = CHUNK_SIZE;
+        if (size - total_received < CHUNK_SIZE)
+            bytes_to_recv = size - total_received;
+
+        ssize_t rcvd_bytes = recv(sock_fd, buffer, bytes_to_recv, 0);
         if (rcvd_bytes < 0) {
             perror("ERROR: file receive - Error receiving data\n");
             fclose(out_file);
             pthread_mutex_unlock(&rcv_mutex);
             return -1;
-        } else if (rcvd_bytes == 0) {
-            // No more data, but the total received doesn't match the expected size
-            fprintf(stderr, "Warning: file receive - Connection closed prematurely\n");
-            break;
         }
 
         // Write the received data to the file
         size_t written = fwrite(buffer, 1, rcvd_bytes, out_file);
-        if (written != rcvd_bytes) {
+        if (written != (size_t)rcvd_bytes) {
             perror("ERROR: file receive - Error writing to file\n");
             fclose(out_file);
             pthread_mutex_unlock(&rcv_mutex);
@@ -84,21 +131,13 @@ ssize_t rcv_file(const char* sec_filepath, int sock_fd, uint32_t size) {
 
         total_received += rcvd_bytes;
 
-        // Check if we have received all the expected bytes
-        if (total_received > size) {
-            fprintf(stderr, "ERROR: file receive - More data received than expected\n");
-            fclose(out_file);
-            pthread_mutex_unlock(&rcv_mutex);
-            return -1;
-        }
-
-        // Optionally print progress (to debug or monitor)
-        printf("Received %u/%u bytes\n", total_received, size);
+        // Optional: print progress
+        printf("Received %lu/%u bytes\r", total_received, size);
+        fflush(stdout);
     }
 
+    printf("\nFile receive complete: %lu/%u bytes\n", total_received, size);
     fclose(out_file);
-
-    printf("File received successfully!\n");
     pthread_mutex_unlock(&rcv_mutex);
     return total_received;
 }

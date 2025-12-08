@@ -25,35 +25,44 @@ void client_cmd_handler(socket_md_t* sock) {
   // handle different commands
   switch (sock->command) {
     case WRITE:
+      int sock_fd =sock->client_sock_fd;
       const char* filepath = sock->first_filepath;
-      int sock_fd = sock->client_sock_fd;
       // check if file_exits - if yes then send and receive
       long file_size = get_file_size(filepath);
+      sock->file_size = htonl(file_size);
+      printf("Client: File exists with size of %ld.\n", file_size);
       printf("Long File Size: %ld\n", file_size);
       if (file_exists(filepath) == 1 && file_size > 0) {
-          ssize_t size_sent_bytes = send_file_size(sock_fd, file_size);
-          printf("Client: File exists.\n");
-          // send the file to server
-          ssize_t file_sent_bytes = send_file(filepath, sock_fd);
-          printf("File Sent Bytes: %ld\n", file_sent_bytes);
-          if (file_sent_bytes > 0) {
-            // Wait for acknowledgment from the other socket before declaring success
-            ssize_t msg_recv_bytes = recv(sock_fd, server_message, MSG_SIZE, 0);
-            printf("Message Received Bytes: %ld\n", msg_recv_bytes);
-            if (msg_recv_bytes < 0) {
-                perror("Client: Error receiving acknowledgment from server\n");
-                return;
-            } else if (msg_recv_bytes == 0) {
-                printf("Client: No acknowledgement receive\n");
-                return;
-            }
-
-            __print_server_resp(server_message);
-        }
+          int request_sent_status = send_request(sock);
+          if (request_sent_status == 0) {
+              printf("Sending file data (%lu bytes)...\n", file_size);
+              if (send_file(filepath, sock_fd) < 0) {
+                  fprintf(stderr, "send_file failed\n");
+                  return;
+              }
+              printf("File sent..\n");
+          }
       } else {
           fprintf(stderr, "Client: File does not exist.\n");
-          ssize_t size_sent_bytes = send_file_size(sock_fd, file_size);
       }
+      
+          // // send the file to server
+          // ssize_t file_sent_bytes = send_file(filepath, sock_fd);
+          // printf("File Sent Bytes: %ld\n", file_sent_bytes);
+          // if (file_sent_bytes > 0) {
+          //   // Wait for acknowledgment from the other socket before declaring success
+          //   ssize_t msg_recv_bytes = recv(sock_fd, server_message, MSG_SIZE, 0);
+          //   printf("Message Received Bytes: %ld\n", msg_recv_bytes);
+          //   if (msg_recv_bytes < 0) {
+          //       perror("Client: Error receiving acknowledgment from server\n");
+          //       return;
+          //   } else if (msg_recv_bytes == 0) {
+          //       printf("Client: No acknowledgement receive\n");
+          //       return;
+          //   }
+
+          //   __print_server_resp(server_message);
+      
       
       break;
   /*
@@ -122,6 +131,7 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
 }
 
 
+
 /*
 build_message
 NOTE: free() ptr after use
@@ -176,7 +186,6 @@ ssize_t send_args_message(socket_md_t* sock, char* message) {
       return -1;
     }
 }
-
 
 /*
 __print_server_resp

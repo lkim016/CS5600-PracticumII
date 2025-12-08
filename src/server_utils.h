@@ -42,7 +42,7 @@ char* build_send_msg(unsigned long id, const char* part1, const char* part2);
  * @param socket socket_t* - the pointer to the server socket metadata object
  */
 //void* server_cmd_handler(void* arg);
-char* server_cmd_handler(socket_md_t* sock);
+void* server_cmd_handler(socket_md_t* sock);
 
 
 /**
@@ -58,7 +58,7 @@ char* server_cmd_handler(socket_md_t* sock);
  * @param socket socket_t* - the pointer to the server socket metadata object
  * @return char* - the string CLI args message
  */
-char* rcv_args_message(socket_md_t* sock);
+char* rcv_args_message(int sock_fd);
 
 
 /**

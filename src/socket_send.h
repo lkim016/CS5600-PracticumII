@@ -15,6 +15,8 @@
 #include <pthread.h>
 
 #include "config.h"
+#include "protocol.h"
+#include "socket_md.h"
 
 
 #ifndef SOCKET_SEND_H
@@ -31,7 +33,7 @@
 ssize_t send_msg(int sock_fd, const char* message);
 
 
-ssize_t send_file_size(int sock_fd, long size);
+int send_request(socket_md_t* sock);
 
 /**
  * @brief depending on the command, a TCP socket is being asked to read a file from its local env and then send it to the other TCP socket either client or message.

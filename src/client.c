@@ -62,17 +62,15 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    char* msg_to_server = build_message(argc, argv);
-    ssize_t cmd_sent_status = send_args_message(client_metadata, msg_to_server);
+    // char* msg_to_server = build_message(argc, argv);
+    // ssize_t cmd_sent_status = send_args_message(client_metadata, msg_to_server);
     
-    if (cmd_sent_status > 0) {
-      // Set server socket metadata
-      set_client_sock_metadata(client_metadata, argc, argv);
+    // Set server socket metadata
+    set_client_sock_metadata(client_metadata, argc, argv);
 
-      print_sock_metada(client_metadata); // FIXME: mayeb delete
-      
-      client_cmd_handler(client_metadata);
-    }
+    print_sock_metada(client_metadata); // FIXME: maybe delete
+    
+    client_cmd_handler(client_metadata);
 
     
     // Close the socket:
