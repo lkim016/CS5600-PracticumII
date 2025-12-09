@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) {
     socket_md_t* client_metadata = create_socket_md(socket_desc);
     if (!client_metadata) {
         printf("Failed to create socket metadata\n");
+        close(socket_desc);
         return -1;
     }
 
@@ -68,14 +69,31 @@ int main(int argc, char* argv[]) {
     // Set server socket metadata
     set_client_sock_metadata(client_metadata, argc, argv);
 
-    print_sock_metada(client_metadata); // FIXME: maybe delete
+    
+    // serialize and send args
+    int send_request_status = send_request(client_metadata);
+    if (send_request_status != 0) {
+        printf("ERROR: CLI Args were not sent.\n");
+        close(socket_desc);
+        free_socket(client_metadata);
+        return -1;
+    }
+    printf("CLI Args sent.\n");
+
+    if (client_metadata->command != RM) {
+        char* filepath1 = client_metadata->first_filepath;
+        char* filepath2 = strdup(filepath1);
+        set_sec_fileInfo(filepath2, client_metadata);
+        set_sec_filepath(client_metadata);
+        free(filepath2);
+    }
     
     client_cmd_handler(client_metadata);
 
     
     // Close the socket:
     free_socket(client_metadata);
-    printf("CLIENT END---\n");
+    printf("CLIENT END-----\n");
   } else {
     printf("Usage: %s <COMMAND> <CLIENT FILENAME> <SERVER FILENAME>\n", argv[0]);
     return 1;

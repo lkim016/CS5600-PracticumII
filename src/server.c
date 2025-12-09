@@ -82,11 +82,17 @@ int main(void) {
     }
 
     // set_server_sock_fd(server_metadata, socket_desc);
-    printf("SERVER CONNECTION---\n");
+    printf("SERVER CONNECTION-----\n");
     printf("Client connected at IP: %s and port: %i\n", 
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
     
+    
+    // rcv_args_message(server_metadata->client_sock_fd);
+
+  
+    // receive serialized command args
+    rcv_request(server_metadata);
 
     server_cmd_handler(server_metadata);
     /*
@@ -105,6 +111,7 @@ int main(void) {
   }
 
   close(socket_desc);
+  printf("SERVER CONNECTION CLOSING-----\n");
     
   return 0;
 }

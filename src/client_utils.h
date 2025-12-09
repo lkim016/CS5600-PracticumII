@@ -43,6 +43,7 @@ void client_cmd_handler(socket_md_t* sock);
  */
 void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]);
 
+
 /**
  * @brief sends constructed message from the CLI args commands to be sent to the Server
  *

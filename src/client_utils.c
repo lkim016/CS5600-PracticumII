@@ -14,100 +14,158 @@ pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
 client_cmd_handler
 */
 void client_cmd_handler(socket_md_t* sock) {
-  if (!sock) {
-      fprintf(stderr, "ERROR: Socket is NULL\n");
-      return;
-  }
+    if (!sock) {
+        fprintf(stderr, "ERROR: Socket is NULL\n");
+        return;
+    }
 
-  int request_sent_status = send_request(sock); // send args
-  
-  // Clean buffers:
-  char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
-  memset(server_message,'\0',sizeof(server_message));
-  // const char* msg = NULL;
-  // handle different commands
-  char* msg = NULL;
-  int sock_fd =sock->client_sock_fd;
-  commands cmd = sock->command;
-  if (cmd == WRITE) {
-      const char* filepath = sock->first_filepath;
-      // check if file_exits - if yes then send and receive
-      long file_size = get_file_size(filepath);
-      sock->file_size = htonl(file_size);
-      printf("Client: First file exists with size of %ld.\n", file_size);
-    //   printf("Long File Size: %ld\n", file_size);
-      if (file_exists(filepath) == 1 && file_size > 0) {
-          int request_sent_status = send_request(sock);
-          if (request_sent_status == 0) {
-              printf("Sending file data (%lu bytes)...\n", file_size);
-              if (send_file(filepath, sock_fd) < 0) {
-                  fprintf(stderr, "send_file failed\n");
-                  return;
-              }
-              printf("File sent..\n");
-          }
-      } else {
-          fprintf(stderr, "Client: File does not exist.\n");
-      }
-      
-      return;
+    print_sock_metada(sock); // FIXME: maybe delete
+    
+    // Clean buffers:
+    char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
+    memset(server_message,'\0',sizeof(server_message));
+    // const char* msg = NULL;
+    // handle different commands
+    char* msg = NULL;
+    commands cmd = sock->command;
+    int sock_fd = sock->client_sock_fd;
+    char* filepath1 = strdup(sock->first_filepath);
+    char* filepath2 = NULL;
+    if (sock->sec_filepath != NULL) {
+        filepath2 = strdup(sock->sec_filepath);
+    }
+    uint32_t file_size = 0;
+    if (cmd == WRITE) {
+        // check if file_exits - if yes then send and receive
+        sock->file_size = get_file_size(filepath1);
+        file_size = sock->file_size;
+        printf("Client: First file exists with size of %u.\n", file_size);
+        if (file_exists(filepath1) == 1 && file_size > 0) {
+            int size_sent_status = send_size(sock_fd, file_size);
+            if (size_sent_status == 0) {
+                printf("Client: Sending file data (%u bytes)...\n", file_size);
+                if (send_file(filepath1, sock_fd) < 0) {
+                    fprintf(stderr, "Client: send_file failed\n");
+                } else {
+                    printf("Client: File sent..\n");
+                }
+            }
+        } else {
+            fprintf(stderr, "Client: File does not exist.\n");
+        }
+        if (filepath1 != NULL) {
+            free(filepath1);
+        }
+        
+        if (filepath2 != NULL) {
+            free(filepath2);
+        }
+        return;
     } else if (cmd == GET) {
-        const char* filepath = sock->sec_filepath;
         rcv_request(sock); // a. receive file size
+        file_size = sock->file_size;
 
         ssize_t file_rcvd_bytes = 0;
         pthread_mutex_lock(&file_mutex);  // Lock filesystem
-        int folder_exists = folder_not_exists_make(filepath);
-        if (folder_exists == 0) {
-            printf("Path existed or was newly created\n");
+        int folder_exists = folder_not_exists_make(filepath2);
+        if (folder_exists == 0 && file_size > 0) {
+            printf("Client: Path existed or was newly created\n");
 
-            uint32_t size = sock->file_size;
-            printf("Receiving file (%u bytes) to: %s\n", size, filepath);
-            file_rcvd_bytes = rcv_file(sock_fd, filepath, size); // b. receive file
+            printf("Client: Receiving file (%u bytes) to: %s\n", file_size, filepath2);
+            file_rcvd_bytes = rcv_file(sock_fd, filepath2, file_size);
             pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-
-            msg = build_send_msg(0,"Client: ", "File received successfully!");
-        } else {
-            msg = build_send_msg(0, "Client: ", "Error folder was not able to be made");
             if (file_rcvd_bytes < 0 ) {
-                msg = build_send_msg(0, "Client: ", "Error receiving file");
+                msg = "Client: Error receiving file";
+            }
+
+            msg = "Client: File sent successfully!";
+        } else {
+            if(file_size == 0) {
+                msg = "Client: Error size of file being sent is 0";
+            } else {
+                msg = "Client: Error file size is 0 or folder was not able to be made";
             }
         }
 
         printf("%s\n", msg);
-
-        if (msg != NULL) {
-          free(msg);
+        
+        if (filepath1 != NULL) {
+            free(filepath1);
+        }
+        
+        if (filepath2 != NULL) {
+            free(filepath2);
         }
         return;
     } else if (cmd == RM) {
-        if (request_sent_status == 0) {
-            // Wait for acknowledgment from the other socket before declaring success
-            ssize_t rm_recv = recv(sock_fd, server_message, sizeof(server_message), 0); // receive server's response to handling RM
-            if (rm_recv < 0) {
-                perror("Error receiving acknowledgment from server");
-                return;
-            } else if (rm_recv == 0) {
-                printf("Server closed connection\n");
-                return;
+        // Wait for acknowledgment from the other socket before declaring success
+        ssize_t rm_recv = recv(sock_fd, server_message, sizeof(server_message), 0); // receive server's response to handling RM
+        if (rm_recv < 0) {
+            perror("Client: Error receiving acknowledgment from server");
+            if (filepath1 != NULL) {
+                free(filepath1);
             }
+            
+            if (filepath2 != NULL) {
+                free(filepath2);
+            }
+            return;
+        } else if (rm_recv == 0) {
+            printf("Client: Server closed connection\n");
+            if (filepath1 != NULL) {
+                free(filepath1);
+            }
+            
+            if (filepath2 != NULL) {
+                free(filepath2);
+            }
+            return;
         }
 
         __print_server_resp(server_message);
+        
+        if (filepath1 != NULL) {
+            free(filepath1);
+        }
+        
+        if (filepath2 != NULL) {
+            free(filepath2);
+        }
 
-      return;
-    } else if (cmd == STOP) {
-      // Receive the server's response:
-      if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
-        printf("Error while receiving server's msg\n");
         return;
-      }
-      
-      printf("Server's response:\n%s\n",server_message);
-      return;
+    } else if (cmd == STOP) {
+        // Receive the server's response:
+        if(recv(sock_fd, server_message, sizeof(server_message), 0) < 0) {
+                printf("Client: Error while receiving server's msg\n");
+                if (filepath1 != NULL) {
+                    free(filepath1);
+                }
+                
+                if (filepath2 != NULL) {
+                    free(filepath2);
+                }
+                return;
+        }
+        
+        printf("Client:\n Server's response:\n%s\n",server_message);
+        if (filepath1 != NULL) {
+            free(filepath1);
+        }
+        
+        if (filepath2 != NULL) {
+            free(filepath2);
+        }
+        return;
     } else {
-      printf("Unknown command\n");
-      return;
+        printf("Client: Unknown command\n");
+    }
+
+    if (filepath1 != NULL) {
+        free(filepath1);
+    }
+    
+    if (filepath2 != NULL) {
+        free(filepath2);
     }
 }
 
@@ -115,16 +173,25 @@ void client_cmd_handler(socket_md_t* sock) {
 /* set_client_sock_metadata */
 void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
   // set members of socket object
-  set_command(sock, str_to_cmd_enum(argv[1]));
+  if (argv[1] == NULL) {
+    fprintf(stderr, "Client: command is missing\n");
+  } else {
+    set_command(sock, str_to_cmd_enum(argv[1]));
+  }
 
-  if (argc > 2) { // set first_filepath
-      set_first_fileInfo(argv[2], sock);
-      set_first_filepath(sock);
+  if (argv[2] == NULL) {
+    fprintf(stderr, "Client: filepath1 is missing\n");
+  } else {
+    set_first_fileInfo(argv[2], sock);
+    set_first_filepath(sock);
   }
   
-  if (argc > 3) { // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-      set_sec_fileInfo(argv[3], sock);
-      set_sec_filepath(sock);
+  // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
+  if (argv[3] != NULL) {
+    set_sec_fileInfo(argv[3], sock);
+    set_sec_filepath(sock);
+  } else {
+    fprintf(stderr, "Client: filepath2 is missing\n");
   }
 }
 

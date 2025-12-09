@@ -28,6 +28,22 @@ ssize_t recv_all(int sock_fd, void *buffer, size_t length);
 void rcv_request(socket_md_t* sock);
 
 /**
+ * @brief function to globally handle the STOP command for all threads
+ *
+ * @param exit_msg char* - a const char string that holds the server STOP message
+ */
+// void handle_stop(const char* exit_msg)
+
+/**
+ * @brief receives the message built from args received by Client
+ *
+ * @param socket socket_t* - the pointer to the server socket metadata object
+ * @return char* - the string CLI args message
+ */
+char* rcv_args_message(int sock_fd);
+
+
+/**
  * @brief depending on the command, a TCP socket is being asked to recevied a read file from the other TCP socket and then write it out to its local env.
  *
  * 

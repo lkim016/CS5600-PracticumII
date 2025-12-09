@@ -41,6 +41,8 @@ char* build_send_msg(unsigned long id, const char* part1, const char* part2);
  */
 ssize_t send_msg(int sock_fd, const char* message);
 
+ssize_t send_size(int sock_fd, uint32_t size);
+
 
 int send_request(socket_md_t* sock);
 

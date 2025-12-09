@@ -14,6 +14,12 @@ pthread_mutex_t rcv_mutex = PTHREAD_MUTEX_INITIALIZER; // FIXME: maybe change na
 
 
 ssize_t recv_all(int sock_fd, void *buffer, size_t length) {
+    if (sock_fd < 0) {
+        return 0;
+    }
+    if (length <= 0) {
+        return 0;
+    }
     size_t total = 0;
     char *buf = buffer;
 
@@ -61,9 +67,9 @@ void rcv_request(socket_md_t* sock) {
 
     set_first_fileInfo(fpath1, sock);
     set_first_filepath(sock);
-    if (fpath2 != NULL) {
+    if (fpath2 != NULL && sock->command != RM) {
         set_sec_fileInfo(fpath2, sock);
-    } else {
+    } else if (sock->command != RM) {
         set_sec_fileInfo(fpath1, sock);
     }
     set_sec_filepath(sock);
@@ -72,7 +78,8 @@ void rcv_request(socket_md_t* sock) {
     printf("Command: %u\n", sock->command);
     printf("Filename1: %s\n", sock->first_filepath);
     printf("Filename2: %s\n", sock->sec_filepath);
-
+    
+    return;
 }
 
 /*

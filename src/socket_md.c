@@ -51,7 +51,7 @@ const char* cmd_enum_to_str(commands cmd) {
 void set_command(socket_md_t* sock, commands command) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
-        exit(1);
+        return;
     }
 
     sock->command = command;
@@ -80,25 +80,25 @@ Notes:
 void set_first_filepath(socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
-        exit(1);
+        return;
     }
 
     int file_path_len = 0;
     if (sock->first_dirs != NULL) {
         if(sock->first_filename != NULL) {
-            file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename);
+            file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename) + 1;
             char path[file_path_len]; // ex: data/file.txt
             sprintf(path, "%s%s", sock->first_dirs, sock->first_filename);
             sock->first_filepath = strdup(path);
         } else {
-            file_path_len = strlen(sock->first_dirs);
+            file_path_len = strlen(sock->first_dirs) + 1;
             char path[file_path_len]; // ex: data/file.txt
             sprintf(path, "%s", sock->first_dirs);
             sock->first_filepath = strdup(path);
         }
     } else {
         if(sock->first_filename != NULL) {
-            file_path_len = strlen(sock->first_filename);
+            file_path_len = strlen(sock->first_filename) + 1;
             char path[file_path_len];
             sprintf(path, "%s", sock->first_filename);
             sock->first_filepath = strdup(path);
@@ -118,12 +118,12 @@ void set_sec_filepath(socket_md_t* sock) {
     switch(sock->command) {
         case WRITE:
             if (sock->sec_dirs == NULL) {
-                file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(sock->sec_filename);
+                file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(sock->sec_filename) + 1;
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", DEFAULT_SERVER_DIR, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
             } else {
-                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename);
+                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename) + 1;
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", sock->sec_dirs, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
@@ -132,12 +132,12 @@ void set_sec_filepath(socket_md_t* sock) {
             break;
         case GET: // if local folder or file is omitted then use current folder
             if (sock->sec_dirs == NULL) {
-                file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(sock->sec_filename);
+                file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(sock->sec_filename) + 1;
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", DEFAULT_CLIENT_DIR, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
             } else {
-                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename);
+                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename) + 1;
                 char path[file_path_len]; // ex: data/file.txt
                 sprintf(path, "%s%s", sock->sec_dirs, sock->sec_filename);
                 sock->sec_filepath = strdup(path);
@@ -162,7 +162,7 @@ void set_first_fileInfo(const char *path, socket_md_t* sock) {
         return;
     }
 
-    // if sec file path info is missing from command then make from first file path info
+    // if first file path info is missing then need to exit since first path cannot be missing
     if (path == NULL) {
         fprintf(stderr, "ERROR: first path from arv[3] is NULL\n");
         return;
@@ -222,7 +222,7 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
         return;
     }
     // if sec file path info is missing from command then make from first file path info
-    if (path == NULL) {
+    if (path == NULL) { // will handle this when sending args are sent to server
         fprintf(stderr, "second path from arv[4] is NULL\n");
         return;
     }
@@ -278,45 +278,41 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
 
 
 void free_socket(socket_md_t* sock) {
-    if (sock == NULL) {
-        fprintf(stderr, "ERROR: socket is NULL\n");
-        exit(1);
-    }
+    if (sock != NULL) {
+        if (sock->first_dirs != NULL) {
+            free(sock->first_dirs);
+        }
+        if (sock->sec_dirs != NULL) {
+            free(sock->sec_dirs);
+        }
 
-    if (sock->first_dirs != NULL) {
-        free(sock->first_dirs);
-    }
-    if (sock->sec_dirs != NULL) {
-        free(sock->sec_dirs);
-    }
+        if (sock->first_filename != NULL) {
+            free(sock->first_filename);
+        }
+        if (sock->sec_filename != NULL) {
+            free(sock->sec_filename);
+        }
 
-    if (sock->first_filename != NULL) {
-        free(sock->first_filename);
-    }
-    if (sock->sec_filename != NULL) {
-        free(sock->sec_filename);
-    }
+        if (sock->first_file_ext != NULL) {
+            free(sock->first_file_ext);
+        }
+        if (sock->sec_file_ext != NULL) {
+            free(sock->sec_file_ext);
+        }
+        
+        if (sock->first_filepath != NULL) {
+            free(sock->first_filepath);
+        }
+        if (sock->sec_filepath != NULL) {
+            free(sock->sec_filepath);
+        }
 
-    if (sock->first_file_ext != NULL) {
-        free(sock->first_file_ext);
-    }
-    if (sock->sec_file_ext != NULL) {
-        free(sock->sec_file_ext);
-    }
-    
-    if (sock->first_filepath != NULL) {
-        free(sock->first_filepath);
-    }
-    if (sock->sec_filepath != NULL) {
-        free(sock->sec_filepath);
-    }
+        if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
+            shutdown(sock->client_sock_fd, SHUT_RDWR); // disables both sends and receives
+            close(sock->client_sock_fd);
+            printf("Closed client socket fd: %d\n", sock->client_sock_fd);
+        }
 
-    if (sock->client_sock_fd >= 0) { // if valid file descriptor is assigned then close it
-        shutdown(sock->client_sock_fd, SHUT_RDWR); // disables both sends and receives
-        close(sock->client_sock_fd);
-        printf("Closed client socket fd: %d\n", sock->client_sock_fd);
+        free(sock);
     }
-
-
-    free(sock);
 }

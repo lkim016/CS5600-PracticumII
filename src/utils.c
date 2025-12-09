@@ -22,22 +22,22 @@ bool file_exists(const char* file) {
 /*
 get_file_size
 */
-long get_file_size(const char* filepath) {
+uint32_t get_file_size(const char* filepath) {
     if(filepath == NULL) {
         return -1;
     }
 
+    uint32_t filesize32 = 0;
     struct stat st;
     if (stat(filepath, &st) == 0) {
-        if (st.st_size > LONG_MAX) {
-            fprintf(stderr, "File too large to fit in long\n");
+        if (st.st_size < 0 || st.st_size > UINT32_MAX) {
+            fprintf(stderr, "File too large for 32-bit protocol\n");
             return -1;
         }
-        return (long)st.st_size;
-    } else {
-        perror("stat failed");
-        return -1;
+
+        filesize32 = (uint32_t) st.st_size;
     }
+    return filesize32;
 }
 
 /*
@@ -97,7 +97,6 @@ int folder_not_exists_make(const char* file_path) {
             // Directory doesn't exist, create it
             if (mkdir(path, 0755) != 0) {
                 if (errno != EEXIST) {
-                    perror("mkdir failed");
                     fprintf(stderr, "Failed to create directory: %s\n", path);
                     free(path_copy);
                     free(dirs);
@@ -131,6 +130,10 @@ int folder_not_exists_make(const char* file_path) {
  * @param path const char* - the socket metadata object's folder path (write_dirs)
  */
 void remove_directory(const char *path) {
+    if (path == NULL) {
+        fprintf(stderr, "Path is NULL\n");
+        return;
+    }
     DIR *dir = opendir(path);
     struct dirent *entry;
     char fullPath[512];
@@ -140,7 +143,7 @@ void remove_directory(const char *path) {
         if (errno == ENOENT) {
             return; // Already deleted, not an error
         }
-        perror("Error opening directory");
+        perror("Error opening directory\n");
         return;
     }
 
@@ -181,9 +184,25 @@ void remove_directory(const char *path) {
 rm_file_or_folder
 */
 int rm_file_or_folder(socket_md_t* sock) {
-    const char* filepath = sock->first_filepath;
-    const char* filename = sock->first_filename;
-    const char* path = sock->first_dirs;
+    if (sock == NULL) {
+        return -1;
+    }
+    char* fp1 = sock->first_filepath;
+    char* fn1 = sock->first_filename;
+    char* dirs1 = sock->first_dirs;
+    
+    char* filepath = NULL;
+    char* filename = NULL;
+    char* path = NULL;
+    if (fp1 != NULL) {
+        filepath = strdup(fp1);
+    }
+    if (fn1 != NULL) {
+        filename = strdup(fn1);
+    }
+    if (dirs1 != NULL) {
+        path = strdup(dirs1);
+    }
     
     // LOCK: Protect entire filesystem operation
     pthread_mutex_lock(&utils_mutex);
@@ -201,6 +220,9 @@ int rm_file_or_folder(socket_md_t* sock) {
             // Change permissions if needed
             if (chmod(filepath, mode) != 0) {
                 perror("Error setting file permissions");
+                free(filepath);
+                free(filename);
+                free(path);
                 pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
@@ -210,10 +232,16 @@ int rm_file_or_folder(socket_md_t* sock) {
             // Remove the file
             if (remove(filepath) == 0) {
                 printf("File '%s' has been deleted successfully\n", filename);
+                free(filepath);
+                free(filename);
+                free(path);
                 pthread_mutex_unlock(&utils_mutex);
                 return 1;
             } else {
                 perror("Error deleting the file");
+                free(filepath);
+                free(filename);
+                free(path);
                 pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
@@ -224,6 +252,9 @@ int rm_file_or_folder(socket_md_t* sock) {
             mode_t mode = 0755;
             if (chmod(path, mode) != 0) {
                 perror("Error changing directory permissions");
+                free(filepath);
+                free(filename);
+                free(path);
                 pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
@@ -235,16 +266,25 @@ int rm_file_or_folder(socket_md_t* sock) {
             
             if (rmdir(path) == 0) {
                 printf("Directory '%s' has been removed successfully.\n", path);
+                free(filepath);
+                free(filename);
+                free(path);
                 pthread_mutex_unlock(&utils_mutex);
                 return 1;
             } else {
                 if (errno == ENOENT) {
                     // Already deleted by another thread
                     printf("Directory '%s' was already removed.\n", path);
+                    free(filepath);
+                    free(filename);
+                    free(path);
                     pthread_mutex_unlock(&utils_mutex);
                     return 1;
                 }
                 perror("Error removing the directory");
+                free(filepath);
+                free(filename);
+                free(path);
                 pthread_mutex_unlock(&utils_mutex);
                 return -1;
             }
@@ -256,10 +296,16 @@ int rm_file_or_folder(socket_md_t* sock) {
         } else {
             perror("Error accessing path");
         }
+        free(filepath);
+        free(filename);
+        free(path);
         pthread_mutex_unlock(&utils_mutex);
         return -1;
     }
     
+    free(filepath);
+    free(filename);
+    free(path);
     pthread_mutex_unlock(&utils_mutex);
     return 1;
 }

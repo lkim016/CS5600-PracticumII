@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <stdbool.h>
-#include <limits.h> // for LONG_MAX
+#include <stdint.h>
 
 #include <pthread.h>
 
@@ -36,7 +36,7 @@
 bool file_exists(const char* file);
 
 
-long get_file_size(const char* filepath);
+uint32_t get_file_size(const char* filepath);
 
 /**
  * @brief checks to see if each folder in the path exists, if not then it creates it
