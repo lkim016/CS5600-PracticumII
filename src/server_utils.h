@@ -33,8 +33,7 @@ extern bool stop_server;
  *
  * @param socket socket_t* - the pointer to the server socket metadata object
  */
-//void* server_cmd_handler(void* arg);
-void* server_cmd_handler(socket_md_t* sock);
+void server_cmd_handler(socket_md_t* sock);
 
 
 /**

@@ -80,13 +80,6 @@ int main(int argc, char* argv[]) {
     }
     printf("CLI Args sent.\n");
 
-    if (client_metadata->command != RM && client_metadata->command != STOP) {
-        char* filepath1 = client_metadata->first_filepath;
-        char* filepath2 = strdup(filepath1);
-        set_sec_fileInfo(filepath2, client_metadata);
-        set_sec_filepath(client_metadata);
-        free(filepath2);
-    }
     
     client_cmd_handler(client_metadata);
 

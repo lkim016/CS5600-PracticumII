@@ -177,7 +177,7 @@ void client_cmd_handler(socket_md_t* sock) {
 void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
     // set members of socket object
     if (argv[1] == NULL) {
-        fprintf(stderr, "Client: command is missing\n");
+        fprintf(stderr, "Client: command is NULL\n");
     } else {
         set_command(sock, str_to_cmd_enum(argv[1]));
     }
@@ -186,7 +186,7 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
         return;
     }
     if (argv[2] == NULL) {
-        fprintf(stderr, "Client: filepath1 is missing\n");
+        fprintf(stderr, "Client: filepath1 is NULL\n");
     } else {
         set_first_fileInfo(argv[2], sock);
         set_first_filepath(sock);
@@ -197,10 +197,17 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
     // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
     if (argv[3] != NULL) {
         set_sec_fileInfo(argv[3], sock);
-        set_sec_filepath(sock);
     } else {
-        fprintf(stderr, "Client: filepath2 is missing\n");
+        if (sock->first_filename != NULL) {
+            char* filename1 = strdup(sock->first_filename);
+            set_sec_fileInfo(filename1, sock);
+            free(filename1);
+        } else {
+            fprintf(stderr, "Client: filepath2 and filename1 is NULL\n");
+        }
     }
+    
+    set_sec_filepath(sock);
 }
 
 /*

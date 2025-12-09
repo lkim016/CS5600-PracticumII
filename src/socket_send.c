@@ -28,7 +28,7 @@ char* build_send_msg(unsigned long id, const char* part1, const char* part2) { /
         return NULL;
     }
 
-    size_t len = strlen(part1) + strlen(part2) + 3; // 1 for space, 1 for newline, 1 for null terminator
+    size_t len = strlen(part1) + strlen(part2) + MSG_SIZE; // 1 for space, 1 for newline, 1 for null terminator
     char* msg_ptr = calloc(len, sizeof(char));
     if (msg_ptr == NULL) {
         perror("Memory allocation failed\n");
@@ -74,25 +74,10 @@ ssize_t send_size(int sock_fd, uint32_t size) {
     // set all values in protocol except file size to empty values
     // int sock_fd = sock->client_sock_fd;
     int command = NULL_VAL;
-    char* first_filepath = calloc(1, 1); // allocate 1 byte for null terminator
-    if (!first_filepath) {
-        perror("WARNING: calloc failed for first_filepath, could not send");
-        return -1;
-    }
-    first_filepath = '\0';
-
-    char* sec_filepath = calloc(1, 1); // allocate 1 byte for null terminator
-    if (!sec_filepath) {
-        perror("WARNING: failed for sec_filepath, could not send");
-        return -1;
-    }
-    sec_filepath = '\0';
+    uint32_t fpath1_len = 0;
+    uint32_t fpath2_len = 0;
 
     // serialize
-    uint32_t fpath1_len = strlen(first_filepath);
-    uint32_t fpath2_len = strlen(sec_filepath);
-    
-
     struct header h;
     h.command = htonl(command);
     h.fpath1_len = htonl(fpath1_len);
@@ -104,10 +89,6 @@ ssize_t send_size(int sock_fd, uint32_t size) {
         perror("send header");
         return -1;
     }
-
-    /* Send filenames */
-    send(sock_fd, first_filepath, fpath1_len, 0);
-    send(sock_fd, sec_filepath, fpath2_len, 0);
 
     return 0;
 }
@@ -125,7 +106,7 @@ int send_request(socket_md_t* sock) {
     int sock_fd = sock->client_sock_fd;
     commands command = sock->command;
     char* first_filepath = NULL;
-    if (sock->sec_filepath != NULL) { // can be NULL with STOP
+    if (sock->first_filepath != NULL) { // can be NULL with STOP
         first_filepath = strdup(sock->first_filepath);
         if (!first_filepath) {
             perror("ERROR: strdup failed for second filepath, could not send");

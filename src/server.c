@@ -14,6 +14,19 @@
 pthread_mutex_t stop_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool stop_server = false;
 
+
+void* server_thread_func(void* arg) {
+  socket_md_t* md = (socket_md_t*)arg;
+  
+  rcv_request(md);
+
+  server_cmd_handler(md);
+
+  
+  free_socket(md);
+  return NULL;
+}
+
 /**
  * @brief handles the CLI args commands that are pased to it as a message by the client
  *
@@ -74,12 +87,6 @@ int main(void) {
       continue;
     }
     
-    // create a new socket metadata for every client connection
-    socket_md_t* server_metadata = create_socket_md(client_sock);
-    if (!server_metadata) {
-      printf("Failed to create socket metadata\n");
-      continue;
-    }
 
     // set_server_sock_fd(server_metadata, socket_desc);
     printf("SERVER CONNECTION-----\n");
@@ -87,27 +94,29 @@ int main(void) {
           inet_ntoa(client_addr.sin_addr), 
           ntohs(client_addr.sin_port));
     
+    // create a new socket metadata for every client connection
+    socket_md_t* server_metadata = create_socket_md(client_sock);
+    if (!server_metadata) {
+      printf("Failed to create socket metadata\n");
+      continue;
+    }
     
     // rcv_args_message(server_metadata->client_sock_fd);
 
-  
     // receive serialized command args
-    rcv_request(server_metadata);
 
-    server_cmd_handler(server_metadata);
-    /*
     // Create reader and writer threads:
     pthread_t thread;
 
     // cmd hanling thread
-    if (pthread_create(&thread, NULL, server_cmd_handler, (void*)server_metadata) != 0) {
+    if (pthread_create(&thread, NULL, server_thread_func, (void*)server_metadata) != 0) {
         perror("Failed to create reader thread\n");
         close(server_metadata->client_sock_fd);
         continue;
     }
 
     pthread_detach(thread); // Detach the thread to manage its own cleanup
-    */
+
   }
 
   close(socket_desc);

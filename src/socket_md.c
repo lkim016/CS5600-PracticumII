@@ -164,7 +164,7 @@ void set_first_fileInfo(const char *path, socket_md_t* sock) {
 
     // if first file path info is missing then need to exit since first path cannot be missing
     if (path == NULL) {
-        fprintf(stderr, "ERROR: first path from arv[3] is NULL\n");
+        fprintf(stderr, "ERROR: first path from arv[2] is NULL\n");
         return;
     }
     // Find the last occurrence of the directory separator
@@ -223,7 +223,7 @@ void set_sec_fileInfo(const char *path, socket_md_t* sock) {
     }
     // if sec file path info is missing from command then make from first file path info
     if (path == NULL) { // will handle this when sending args are sent to server
-        fprintf(stderr, "second path from arv[4] is NULL\n");
+        fprintf(stderr, "second path from arv[3] is NULL\n");
         return;
     }
     // Find the last occurrence of the directory separator
