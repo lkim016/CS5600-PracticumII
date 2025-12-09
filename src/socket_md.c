@@ -8,6 +8,9 @@
 
 #include "socket_md.h"
 
+/*
+create_socket_md
+*/
 socket_md_t* create_socket_md(int client_fd) {
     socket_md_t* sock = (socket_md_t*)calloc(1, sizeof(socket_md_t));
     if (sock == NULL) {
@@ -30,7 +33,9 @@ socket_md_t* create_socket_md(int client_fd) {
     return sock;
 }
 
-
+/*
+str_to_cmd_enum
+*/
 commands str_to_cmd_enum(const char* str) {
     if (strcmp(str, "WRITE") == 0) return WRITE;
     if (strcmp(str, "GET") == 0) return GET;
@@ -39,7 +44,9 @@ commands str_to_cmd_enum(const char* str) {
     return NULL_VAL;
 }
 
-
+/*
+cmd_enum_to_str
+*/
 const char* cmd_enum_to_str(commands cmd) {
     if (cmd == WRITE) return "WRITE";
     if (cmd == GET) return "GET";
@@ -48,6 +55,9 @@ const char* cmd_enum_to_str(commands cmd) {
     return NULL;
 }
 
+/*
+set_command
+*/
 void set_command(socket_md_t* sock, commands command) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
@@ -58,7 +68,9 @@ void set_command(socket_md_t* sock, commands command) {
     return;
 }
 
-
+/*
+print_sock_metada
+*/
 void print_sock_metada(socket_md_t* sock) {
     if (sock == NULL) {
         fprintf(stderr, "ERROR: socket is NULL\n");
@@ -123,12 +135,12 @@ void set_sec_filepath(socket_md_t* sock) {
     char* dirs2 = sock->sec_dirs;
     int file_path_len = 0;
 
-    if (sock->sec_dirs == NULL && cmd == WRITE) {
+    if (dirs2 == NULL && cmd == WRITE) {
             file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(filename2) + 1;
             char path[file_path_len]; // ex: data/file.txt
             sprintf(path, "%s%s", DEFAULT_SERVER_DIR, filename2);
             sock->sec_filepath = strdup(path);
-    } else if (sock->sec_dirs == NULL && cmd == GET) { // if local folder or file is omitted then use current folder
+    } else if (dirs2 == NULL && cmd == GET) { // if local folder or file is omitted then use current folder
             file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(filename2) + 1;
             char path[file_path_len]; // ex: data/file.txt
             sprintf(path, "%s%s", DEFAULT_CLIENT_DIR, filename2);

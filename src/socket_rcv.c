@@ -54,6 +54,10 @@ void rcv_request(socket_md_t* sock) {
     uint32_t fpath2_len = ntohl(h.fpath2_len);
     sock->file_size = ntohl(h.file_size);
 
+    if (sock->command == STOP) {
+        return;
+    }
+
     /* Read filenames */
     char* fpath1 = malloc(fpath1_len + 1);
     char* fpath2 = malloc(fpath2_len + 1);
@@ -65,11 +69,14 @@ void rcv_request(socket_md_t* sock) {
     fpath2[fpath2_len] = '\0';
 
 
-    set_first_fileInfo(fpath1, sock);
-    set_first_filepath(sock);
-    if (fpath2 != NULL && sock->command != RM) {
+    if(sock->command != STOP) {
+        set_first_fileInfo(fpath1, sock);
+        set_first_filepath(sock); 
+    }
+    
+    if (fpath2 != NULL && (sock->command != RM || sock->command != STOP)) {
         set_sec_fileInfo(fpath2, sock);
-    } else if (sock->command != RM) {
+    } else if (sock->command != RM || sock->command != STOP) {
         set_sec_fileInfo(fpath1, sock);
     }
     set_sec_filepath(sock);

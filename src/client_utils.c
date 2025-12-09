@@ -102,6 +102,7 @@ void client_cmd_handler(socket_md_t* sock) {
 
         return;
     } else if (cmd == STOP) {
+        
         // Receive the server's response:
         if(recv(sock_fd, server_message, sizeof(server_message), 0) < 0) {
             printf("Client: Error while receiving server's msg\n");
