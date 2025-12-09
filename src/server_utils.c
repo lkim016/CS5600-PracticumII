@@ -36,7 +36,10 @@ void* server_cmd_handler(socket_md_t* sock) {
         // set values
         commands cmd = sock->command;
         int sock_fd = sock->client_sock_fd;
-        char* filepath1 = strdup(sock->first_filepath);
+        char* filepath1 = NULL;
+        if (sock->first_filepath != NULL) {
+          filepath1 = strdup(sock->first_filepath);
+        }
         char* filepath2 = NULL;
         if (sock->sec_filepath != NULL) {
           filepath2 = strdup(sock->sec_filepath);
@@ -156,6 +159,7 @@ void* server_cmd_handler(socket_md_t* sock) {
             return NULL;
         } else if (cmd == STOP) {
             msg = build_send_msg(threadID, "Exiting Server...", "");
+            printf("%s\n", msg);
             ssize_t msg_send_bytes = send_msg(sock->client_sock_fd, msg);
             if (msg_send_bytes > 0) {
               printf("Server: final message was sent to client\n");

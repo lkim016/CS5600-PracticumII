@@ -29,7 +29,10 @@ void client_cmd_handler(socket_md_t* sock) {
     char* msg = NULL;
     commands cmd = sock->command;
     int sock_fd = sock->client_sock_fd;
-    char* filepath1 = strdup(sock->first_filepath);
+    char* filepath1 = NULL;
+    if (sock->first_filepath != NULL) {
+        filepath1 = strdup(sock->first_filepath);
+    }
     char* filepath2 = NULL;
     if (sock->sec_filepath != NULL) {
         filepath2 = strdup(sock->sec_filepath);
@@ -136,15 +139,15 @@ void client_cmd_handler(socket_md_t* sock) {
     } else if (cmd == STOP) {
         // Receive the server's response:
         if(recv(sock_fd, server_message, sizeof(server_message), 0) < 0) {
-                printf("Client: Error while receiving server's msg\n");
-                if (filepath1 != NULL) {
-                    free(filepath1);
-                }
-                
-                if (filepath2 != NULL) {
-                    free(filepath2);
-                }
-                return;
+            printf("Client: Error while receiving server's msg\n");
+            if (filepath1 != NULL) {
+                free(filepath1);
+            }
+            
+            if (filepath2 != NULL) {
+                free(filepath2);
+            }
+            return;
         }
         
         printf("Client:\n Server's response:\n%s\n",server_message);
@@ -172,27 +175,32 @@ void client_cmd_handler(socket_md_t* sock) {
 
 /* set_client_sock_metadata */
 void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
-  // set members of socket object
-  if (argv[1] == NULL) {
-    fprintf(stderr, "Client: command is missing\n");
-  } else {
-    set_command(sock, str_to_cmd_enum(argv[1]));
-  }
+    // set members of socket object
+    if (argv[1] == NULL) {
+        fprintf(stderr, "Client: command is missing\n");
+    } else {
+        set_command(sock, str_to_cmd_enum(argv[1]));
+    }
 
-  if (argv[2] == NULL) {
-    fprintf(stderr, "Client: filepath1 is missing\n");
-  } else {
-    set_first_fileInfo(argv[2], sock);
-    set_first_filepath(sock);
-  }
-  
-  // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
-  if (argv[3] != NULL) {
-    set_sec_fileInfo(argv[3], sock);
-    set_sec_filepath(sock);
-  } else {
-    fprintf(stderr, "Client: filepath2 is missing\n");
-  }
+    if (sock->command == STOP) {
+        return;
+    }
+    if (argv[2] == NULL) {
+        fprintf(stderr, "Client: filepath1 is missing\n");
+    } else {
+        set_first_fileInfo(argv[2], sock);
+        set_first_filepath(sock);
+    }
+    if (sock->command == RM) {
+        return;
+    }
+    // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
+    if (argv[3] != NULL) {
+        set_sec_fileInfo(argv[3], sock);
+        set_sec_filepath(sock);
+    } else {
+        fprintf(stderr, "Client: filepath2 is missing\n");
+    }
 }
 
 /*

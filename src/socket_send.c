@@ -124,9 +124,23 @@ int send_request(socket_md_t* sock) {
     // set all values in protocol
     int sock_fd = sock->client_sock_fd;
     commands command = sock->command;
-    char* first_filepath = strdup(sock->first_filepath);
+    char* first_filepath = NULL;
+    if (sock->sec_filepath != NULL) { // can be NULL with STOP
+        first_filepath = strdup(sock->first_filepath);
+        if (!first_filepath) {
+            perror("ERROR: strdup failed for second filepath, could not send");
+            return -1;
+        }
+    } else {
+        first_filepath = (char*)calloc(1, 1); // allocate 1 byte for null terminator
+        if (!first_filepath) {
+            perror("ERROR: calloc failed for second filepath, could not send");
+            return -1;
+        }
+        first_filepath[0] = '\0';
+    }
     char* sec_filepath = NULL;
-    if (sock->sec_filepath != NULL && command != RM) { // second value is omitted then deal with here for server
+    if (sock->sec_filepath != NULL) { // second value is omitted then deal with here for server
         sec_filepath = strdup(sock->sec_filepath);
         if (!sec_filepath) {
             perror("ERROR: strdup failed for second filepath, could not send");
