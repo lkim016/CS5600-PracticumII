@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall
-SRC_FILES = src/socket_md.c src/utils.c src/socket_send.c src/socket_rcv.c
+SRC_FILES = src/socket_md.c src/handlers.c src/utils.c src/socket_send.c src/socket_rcv.c
 TEST_SRC_FILES = $(SRC_FILES)
 
-.PHONY: all tests clean
+.PHONY: all clean
 
 all: server client
 
@@ -26,4 +26,4 @@ test_server: $(TEST_SRC_FILES) tests/client_test.c
 clean:
 	rm -f rfs
 	rm -f server
-	rm -f test*
+	rm -f test_*

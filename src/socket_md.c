@@ -83,24 +83,27 @@ void set_first_filepath(socket_md_t* sock) {
         return;
     }
 
+    char* filename1 = sock->first_filename;
+    char* dirs1 = sock->first_dirs;
     int file_path_len = 0;
-    if (sock->first_dirs != NULL) {
-        if(sock->first_filename != NULL) {
-            file_path_len = strlen(sock->first_dirs) + strlen(sock->first_filename) + 1;
+
+    if (dirs1 != NULL) {
+        if(filename1 != NULL) {
+            file_path_len = strlen(dirs1) + strlen(filename1) + 1;
             char path[file_path_len]; // ex: data/file.txt
-            sprintf(path, "%s%s", sock->first_dirs, sock->first_filename);
+            sprintf(path, "%s%s", dirs1, filename1);
             sock->first_filepath = strdup(path);
         } else {
-            file_path_len = strlen(sock->first_dirs) + 1;
+            file_path_len = strlen(dirs1) + 1;
             char path[file_path_len]; // ex: data/file.txt
-            sprintf(path, "%s", sock->first_dirs);
+            sprintf(path, "%s", dirs1);
             sock->first_filepath = strdup(path);
         }
     } else {
-        if(sock->first_filename != NULL) {
-            file_path_len = strlen(sock->first_filename) + 1;
+        if(filename1 != NULL) {
+            file_path_len = strlen(filename1) + 1;
             char path[file_path_len];
-            sprintf(path, "%s", sock->first_filename);
+            sprintf(path, "%s", filename1);
             sock->first_filepath = strdup(path);
         }
     }
@@ -113,39 +116,35 @@ void set_sec_filepath(socket_md_t* sock) {
         fprintf(stderr, "ERROR: socket is NULL\n");
         return;
     }
-
+    
+    commands cmd = sock->command;
+    char* filename2 = sock->sec_filename;
+    char* filename1 = sock->first_filename;
+    char* dirs2 = sock->sec_dirs;
     int file_path_len = 0;
-    switch(sock->command) {
-        case WRITE:
-            if (sock->sec_dirs == NULL) {
-                file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(sock->sec_filename) + 1;
-                char path[file_path_len]; // ex: data/file.txt
-                sprintf(path, "%s%s", DEFAULT_SERVER_DIR, sock->sec_filename);
-                sock->sec_filepath = strdup(path);
-            } else {
-                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename) + 1;
-                char path[file_path_len]; // ex: data/file.txt
-                sprintf(path, "%s%s", sock->sec_dirs, sock->sec_filename);
-                sock->sec_filepath = strdup(path);
-            }
-            
-            break;
-        case GET: // if local folder or file is omitted then use current folder
-            if (sock->sec_dirs == NULL) {
-                file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(sock->sec_filename) + 1;
-                char path[file_path_len]; // ex: data/file.txt
-                sprintf(path, "%s%s", DEFAULT_CLIENT_DIR, sock->sec_filename);
-                sock->sec_filepath = strdup(path);
-            } else {
-                file_path_len = strlen(sock->sec_dirs) + strlen(sock->sec_filename) + 1;
-                char path[file_path_len]; // ex: data/file.txt
-                sprintf(path, "%s%s", sock->sec_dirs, sock->sec_filename);
-                sock->sec_filepath = strdup(path);
-            }
-            break;
-        default:
-            break;
+
+    if (sock->sec_dirs == NULL && cmd == WRITE) {
+            file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(filename2) + 1;
+            char path[file_path_len]; // ex: data/file.txt
+            sprintf(path, "%s%s", DEFAULT_SERVER_DIR, filename2);
+            sock->sec_filepath = strdup(path);
+    } else if (sock->sec_dirs == NULL && cmd == GET) { // if local folder or file is omitted then use current folder
+            file_path_len = strlen(DEFAULT_CLIENT_DIR) + strlen(filename2) + 1;
+            char path[file_path_len]; // ex: data/file.txt
+            sprintf(path, "%s%s", DEFAULT_CLIENT_DIR, filename2);
+            sock->sec_filepath = strdup(path);
+    } else if (filename2 == NULL) {
+        file_path_len = strlen(dirs2) + strlen(filename1) + 1;
+        char path[file_path_len]; // ex: data/file.txt
+        sprintf(path, "%s%s", dirs2, filename1);
+        sock->sec_filepath = strdup(path);
+    } else {
+        file_path_len = strlen(dirs2) + strlen(filename2) + 1;
+        char path[file_path_len]; // ex: data/file.txt
+        sprintf(path, "%s%s", dirs2, filename2);
+        sock->sec_filepath = strdup(path);
     }
+    
 
     return;
 }

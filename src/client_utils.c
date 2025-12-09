@@ -8,7 +8,6 @@
 
 #include "client_utils.h"
 
-pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 client_cmd_handler
@@ -24,9 +23,9 @@ void client_cmd_handler(socket_md_t* sock) {
     // Clean buffers:
     char server_message[MSG_SIZE]; // Declare server message - since its a stream will send as comma-delimited string
     memset(server_message,'\0',sizeof(server_message));
-    // const char* msg = NULL;
+    
     // handle different commands
-    char* msg = NULL;
+    // char* msg = NULL;
     commands cmd = sock->command;
     int sock_fd = sock->client_sock_fd;
     char* filepath1 = NULL;
@@ -38,24 +37,12 @@ void client_cmd_handler(socket_md_t* sock) {
         filepath2 = strdup(sock->sec_filepath);
     }
     uint32_t file_size = 0;
+    // COMMANDS
     if (cmd == WRITE) {
-        // check if file_exits - if yes then send and receive
         sock->file_size = get_file_size(filepath1);
         file_size = sock->file_size;
-        printf("Client: First file exists with size of %u.\n", file_size);
-        if (file_exists(filepath1) == 1 && file_size > 0) {
-            int size_sent_status = send_size(sock_fd, file_size);
-            if (size_sent_status == 0) {
-                printf("Client: Sending file data (%u bytes)...\n", file_size);
-                if (send_file(filepath1, sock_fd) < 0) {
-                    fprintf(stderr, "Client: send_file failed\n");
-                } else {
-                    printf("Client: File sent..\n");
-                }
-            }
-        } else {
-            fprintf(stderr, "Client: File does not exist.\n");
-        }
+        push(sock_fd, filepath1, file_size);
+        
         if (filepath1 != NULL) {
             free(filepath1);
         }
@@ -68,29 +55,7 @@ void client_cmd_handler(socket_md_t* sock) {
         rcv_request(sock); // a. receive file size
         file_size = sock->file_size;
 
-        ssize_t file_rcvd_bytes = 0;
-        pthread_mutex_lock(&file_mutex);  // Lock filesystem
-        int folder_exists = folder_not_exists_make(filepath2);
-        if (folder_exists == 0 && file_size > 0) {
-            printf("Client: Path existed or was newly created\n");
-
-            printf("Client: Receiving file (%u bytes) to: %s\n", file_size, filepath2);
-            file_rcvd_bytes = rcv_file(sock_fd, filepath2, file_size);
-            pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-            if (file_rcvd_bytes < 0 ) {
-                msg = "Client: Error receiving file";
-            }
-
-            msg = "Client: File sent successfully!";
-        } else {
-            if(file_size == 0) {
-                msg = "Client: Error size of file being sent is 0";
-            } else {
-                msg = "Client: Error file size is 0 or folder was not able to be made";
-            }
-        }
-
-        printf("%s\n", msg);
+        pull(sock_fd, filepath2, file_size);
         
         if (filepath1 != NULL) {
             free(filepath1);
@@ -194,6 +159,7 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
     if (sock->command == RM) {
         return;
     }
+
     // WRITE - if argv[3] is null then use file name of arfv[2] / GET - if argv[3] is null then need to use default local path
     if (argv[3] != NULL) {
         set_sec_fileInfo(argv[3], sock);

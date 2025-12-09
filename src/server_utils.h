@@ -17,8 +17,7 @@
 #include "config.h"
 #include "socket_md.h"
 #include "utils.h"
-#include "socket_send.h"
-#include "socket_rcv.h"
+#include "handlers.h"
 
 #ifndef SERVER_UTILS_H
 #define SERVER_UTILS_H

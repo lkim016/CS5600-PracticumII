@@ -7,7 +7,7 @@
 
 #include "server_utils.h"
 
-pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t rm_file_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 /*
@@ -25,7 +25,6 @@ void server_cmd_handler(socket_md_t* sock) {
         pthread_t thread_id = pthread_self();
         printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
         unsigned long threadID = (unsigned long)thread_id;
-
 
         print_sock_metada(sock); // FIXME: maybe delete
 
@@ -45,74 +44,31 @@ void server_cmd_handler(socket_md_t* sock) {
           filepath2 = strdup(sock->sec_filepath);
         }
         uint32_t file_size = 0;
+        // COMMANDS
         if (cmd == WRITE) {
+                printf("Thread ID: %lu\n", threadID);
                 rcv_request(sock); // receive for file size
                 file_size = sock->file_size;
+                
+                printf("Expected File Size: %u\n", file_size);
+                pull(sock_fd, filepath2, file_size);
 
-                ssize_t file_rcvd_bytes = 0;
-                pthread_mutex_lock(&file_mutex);  // Lock filesystem
-                int folder_exists = folder_not_exists_make(filepath2);
-                if (folder_exists == 0 && file_size > 0) {
-                        printf("Server: Path existed or was newly created\n");
-
-                        printf("Server: Receiving file (%u bytes) to: %s\n", file_size, filepath2);
-                        file_rcvd_bytes = rcv_file(sock_fd, filepath2, file_size);
-                        pthread_mutex_unlock(&file_mutex);  // Lock filesystem
-                        if (file_rcvd_bytes < 0 ) {
-                            msg = build_send_msg(threadID, "Server:", "Error receiving file");
-                        }
-
-                        msg = build_send_msg(threadID,"Server:", "File sent successfully!");
-                } else {
-                        if(file_size == 0) {
-                            msg = build_send_msg(threadID, "Server:", "Error size of file being sent is 0");
-                        } else {
-                            msg = build_send_msg(threadID, "Server:", "Error file size is 0 or folder was not able to be made");
-                        }
+                if (filepath1 != NULL) {
+                    free(filepath1);
+                }
+                if (filepath2 != NULL) {
+                    free(filepath2);
                 }
 
-            // if (send_msg(sock_fd, msg) < 0) {
-            //     perror("Failed to send response to client\n");
-            // }
-
-              printf("%s\n", msg);
-
-              if (msg != NULL) {
-                free(msg);
-              }
-
-              if (filepath1 != NULL) {
-                  free(filepath1);
-              }
-              if (filepath2 != NULL) {
-                  free(filepath2);
-              }
-
-              return;
+                return;
         } else if (cmd == GET) {
+            printf("Thread ID: %lu\n", threadID);
             // check if file_exits - if yes then send and receive
             sock->file_size = get_file_size(filepath1);
             file_size = sock->file_size;
-            printf("Server: First file exists with size of %u.\n", file_size);
-            if (file_exists(filepath1) == 1 && file_size > 0) {
-                int size_sent_status = send_size(sock_fd, file_size);
-                if (size_sent_status == 0) {
-                    printf("Server: Sending file data (%u bytes)...\n", file_size);
-                    if (send_file(filepath1, sock_fd) <= 0) { // b. send file
-                        msg = build_send_msg(threadID, "Server:", "send_file failed");
-                    } else {
-                        msg = build_send_msg(threadID, "Server:", "File sent..");
-                    }
-                }
-            } else {
-                msg = build_send_msg(threadID, "Server:", "File does not exist.");
-            }
 
-            printf("%s\n", msg);
+            push(sock_fd, filepath1, file_size);
 
-            if (msg != NULL) {
-              free(msg);
-            }
             if (filepath1 != NULL) {
                 free(filepath1);
             }
@@ -122,12 +78,13 @@ void server_cmd_handler(socket_md_t* sock) {
 
             return;
           } else if (cmd == RM) {
+            printf("Thread ID: %lu\n", threadID);
             if (filepath1 != NULL) {
               const char* rm_item = filepath1;
               // need to lock here since this is modifying a folder or file
-              pthread_mutex_lock(&file_mutex);
+              pthread_mutex_lock(&rm_file_mutex);
               int rm_status = rm_file_or_folder(sock);
-              pthread_mutex_unlock(&file_mutex);
+              pthread_mutex_unlock(&rm_file_mutex);
               if(rm_status != 1) {
                   const char* const_msg = "Server\n RM: Failed to remove";
                   msg = build_send_msg(threadID, const_msg, rm_item);
