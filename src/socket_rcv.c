@@ -82,11 +82,11 @@ void rcv_request(socket_md_t* sock) {
     
     if (fpath2 != NULL) {
         set_sec_fileInfo(fpath2, sock);
-    } else if (sock->command != RM || sock->command != STOP) {
+    } else if (sock->command != RM && sock->command != STOP) {
         set_sec_fileInfo(fpath1, sock);
     }
     
-    if (sock->command != RM || sock->command != STOP) {
+    if (sock->command != RM && sock->command != STOP) {
         set_sec_filepath(sock);
     }
 
