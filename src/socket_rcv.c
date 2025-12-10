@@ -75,11 +75,11 @@ void rcv_request(socket_md_t* sock) {
     fpath2[fpath2_len] = '\0';
 
 
-    printf("DEBUG!\n");
     if(sock->command != STOP) {
         set_first_fileInfo(fpath1, sock);
         set_first_filepath(sock); 
     }
+    printf("DEBUG!\n");
     
     if (fpath2 != NULL) {
         set_sec_fileInfo(fpath2, sock);
