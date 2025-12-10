@@ -158,7 +158,6 @@ ssize_t rcv_file(int sock_fd, const char* sec_filepath, uint32_t size) {
 
         // Optional: print progress
         printf("Received %lu/%u bytes\r", total_received, size);
-        fflush(stdout);
     }
 
     printf("\nFile receive complete: %lu/%u bytes\n", total_received, size);
