@@ -90,14 +90,14 @@ void rcv_request(socket_md_t* sock) {
         set_sec_filepath(sock);
     }
 
-    printf("DEBUG!\n");
+
     printf("Command: %u\n", sock->command);
     printf("Filename1: %s\n", sock->first_filepath);
     printf("Filename2: %s\n", sock->sec_filepath);
 
     free(fpath1);
     free(fpath2);
-    
+    printf("DEBUG!\n");
     return;
 }
 
