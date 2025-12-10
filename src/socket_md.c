@@ -135,6 +135,9 @@ void set_sec_filepath(socket_md_t* sock) {
     char* dirs2 = sock->sec_dirs;
     int file_path_len = 0;
 
+    if (cmd == RM) {
+        return;
+    }
     if (dirs2 == NULL && cmd == WRITE) {
             file_path_len = strlen(DEFAULT_SERVER_DIR) + strlen(filename2) + 1;
             char path[file_path_len]; // ex: data/file.txt
