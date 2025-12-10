@@ -92,7 +92,7 @@ int main(void) {
       printf("Failed to create socket metadata\n");
       continue;
     }
-    
+    printf("DEBUG!\n");
     // rcv_args_message(server_metadata->client_sock_fd);
 
     // receive serialized command args

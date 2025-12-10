@@ -41,6 +41,10 @@ void rcv_request(socket_md_t* sock) {
         return;
     }
 
+    if (sock->command == STOP) {
+        return;
+    }
+
     int sock_fd = sock->client_sock_fd;
     struct header h;
 
@@ -59,9 +63,6 @@ void rcv_request(socket_md_t* sock) {
     memcpy(&temp, &h.file_size, sizeof(uint32_t));
     sock->file_size = ntohl(temp);
 
-    if (sock->command == STOP) {
-        return;
-    }
 
     /* Read filenames */
     char* fpath1 = malloc(fpath1_len + 1);
