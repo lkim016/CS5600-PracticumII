@@ -40,7 +40,7 @@ char* deliver(unsigned long t_id, int sock_fd, char* filepath1, uint32_t file_si
         return msg;
     }
 
-    msg = build_send_msg(t_id, "Message is empty", "");
+    msg = build_send_msg(t_id, "(Empty message)", "");
     return msg;
 }
 
@@ -74,7 +74,7 @@ char* receive(unsigned long t_id, int sock_fd, char* filepath2, uint32_t file_si
         }
     }
     
-    msg = build_send_msg(t_id, "Message is empty", "");
+    msg = build_send_msg(t_id, "(Empty message)", "");
     return msg;
 }
 
