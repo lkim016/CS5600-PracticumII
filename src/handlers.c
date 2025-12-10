@@ -79,6 +79,7 @@ char* receive(unsigned long t_id, socket_md_t* sock) {
         filepath2 = strdup(sock->sec_filepath);
     }
     const char* sock_type_str = type_enum_to_str(sock->type);
+    rcv_request(sock); // receive file size
     uint32_t file_size = sock->file_size;
     char* msg = NULL;
     int folder_exists = folder_not_exists_make(filepath2);
