@@ -67,14 +67,14 @@ void server_cmd_handler(socket_md_t* sock) {
               int rm_status = rm_file_or_folder(sock);
               pthread_mutex_unlock(&rm_file_mutex);
               if(rm_status != 1) {
-                  const char* const_msg = "RM: Failed to remove";
+                  const char* const_msg = "RM - Failed to remove";
                   msg = build_send_msg(t_id, const_msg, sock->first_filepath);
               } else {
-                  const char* const_msg = "Server\nRM: Successfully removed";
+                  const char* const_msg = "RM - Successfully removed";
                   msg = build_send_msg(t_id, const_msg, sock->first_filepath);
               }
             } else {
-                const char* const_msg = "Server\nRM: First filepath is NULL";
+                const char* const_msg = "RM - First filepath is NULL";
                 msg = build_send_msg(t_id, const_msg, sock->first_filepath);
             }
             
@@ -122,5 +122,5 @@ void server_cmd_handler(socket_md_t* sock) {
 __print_client_resp
 */
 void __print_client_resp(char* response) {
-  printf("Server's response:\n%s\n", response);
+  printf("Server's response:\n  %s\n", response);
 }
