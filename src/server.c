@@ -16,7 +16,7 @@ pthread_mutex_t stop_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* server_thread_func(void* arg) {
   socket_md_t* md = (socket_md_t*)arg;
-  
+  printf("DEBUG!\n");
   rcv_request(md);
 
   server_cmd_handler(md);
@@ -92,7 +92,7 @@ int main(void) {
       printf("Failed to create socket metadata\n");
       continue;
     }
-    printf("DEBUG!\n");
+    
     // rcv_args_message(server_metadata->client_sock_fd);
 
     // receive serialized command args
