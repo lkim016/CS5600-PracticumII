@@ -3,16 +3,16 @@
 #endif
 
 #define CHUNK_SIZE 4096
-/*
+
 // server address and port number
 #define PORT 8080
 #define SERVER_IP "192.168.45.67"
-*/
 
+/*
 // local address and port number
 #define PORT 5000
 #define SERVER_IP "127.0.0.1"
-
+*/
 #define SERVER_BACKLOG 100
 
 
