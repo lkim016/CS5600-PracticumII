@@ -84,11 +84,12 @@ char* receive(unsigned long t_id, socket_md_t* sock) {
     uint32_t file_size = 0;
     char* msg = NULL;
     int folder_exists = folder_not_exists_make(filepath2);
+    // receive file size after transferring sock metadata to local variables
+    rcv_request(sock);
+    file_size = sock->file_size;
     if (folder_exists == 0 && file_size > 0) {
         printf("Path existed or was newly created\n");
-         // receive file size after transferring sock metadata to local variables
-        rcv_request(sock);
-        file_size = sock->file_size;
+        
         printf("Receiving file (%u bytes) to: %s\n", file_size, filepath2);
         ssize_t file_rcvd_bytes = rcv_file(sock_fd, filepath2, file_size);
         printf("Received file %s (%u bytes)\n", filepath2, file_size);
