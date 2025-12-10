@@ -18,7 +18,7 @@ void* server_thread_func(void* arg) {
   socket_md_t* md = (socket_md_t*)arg;
   
   rcv_request(md);
-  printf("DEBUG!\n");
+
   server_cmd_handler(md);
 
   
