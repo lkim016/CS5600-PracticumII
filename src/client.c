@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     }
     printf("Connected with server successfully\n");
 
-    socket_md_t* client_metadata = create_socket_md(socket_desc);
+    socket_md_t* client_metadata = create_socket_md(socket_desc, CLIENT);
     if (!client_metadata) {
         printf("Failed to create socket metadata\n");
         close(socket_desc);

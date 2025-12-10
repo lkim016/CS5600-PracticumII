@@ -11,7 +11,7 @@
 /*
 create_socket_md
 */
-socket_md_t* create_socket_md(int client_fd) {
+socket_md_t* create_socket_md(int client_fd, socket_type type) {
     socket_md_t* sock = (socket_md_t*)calloc(1, sizeof(socket_md_t));
     if (sock == NULL) {
         fprintf(stderr, "ERROR: dynamic memory was not able to be allocated\n");
@@ -19,6 +19,7 @@ socket_md_t* create_socket_md(int client_fd) {
     }
 
     sock->client_sock_fd = client_fd;
+    sock->type = type;
     sock->file_size = 0;
     sock->command = NULL_VAL;
     sock->first_dirs = NULL;
@@ -66,6 +67,15 @@ void set_command(socket_md_t* sock, commands command) {
 
     sock->command = command;
     return;
+}
+
+/*
+type_enum_to_str
+*/
+const char* type_enum_to_str(socket_type type) {
+    if (type == CLIENT) return "CLIENT";
+    if (type == SERVER) return "SERVER";
+    return NULL;
 }
 
 /*

@@ -4,8 +4,6 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-typedef enum {WRITE, GET, RM, STOP, NULL_VAL = 0} commands;
-
 struct __attribute__((packed)) header {
     uint32_t command;
     uint32_t fpath1_len;

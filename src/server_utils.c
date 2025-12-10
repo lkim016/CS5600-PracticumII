@@ -29,47 +29,28 @@ void server_cmd_handler(socket_md_t* sock) {
         char client_message[MSG_SIZE];
         memset(client_message,'\0',sizeof(client_message));
         char* msg = NULL;
-        // set values
         commands cmd = sock->command;
-        int sock_fd = sock->client_sock_fd;
-        char* filepath1 = NULL;
-        if (sock->first_filepath != NULL) {
-          filepath1 = strdup(sock->first_filepath);
-        }
-        char* filepath2 = NULL;
-        if (sock->sec_filepath != NULL) {
-          filepath2 = strdup(sock->sec_filepath);
-        }
-        uint32_t file_size = 0;
         // COMMANDS
         if (cmd == WRITE) {
                 printf("Thread ID: %lu\n", t_id);
                 rcv_request(sock); // receive for file size
-                file_size = sock->file_size;
                 
-                printf("Expected File Size: %u\n", file_size);
-                msg = receive(t_id, sock_fd, filepath2, file_size);
+                printf("Expected File Size: %u\n", sock->file_size);
+                msg = receive(t_id, sock);
 
                 printf("%s\n", msg);
 
                 if (msg != NULL) {
                     free(msg);
                 }
-                if (filepath1 != NULL) {
-                    free(filepath1);
-                }
-                if (filepath2 != NULL) {
-                    free(filepath2);
-                }
 
                 return;
         } else if (cmd == GET) {
             printf("Thread ID: %lu\n", t_id);
             // check if file_exits - if yes then send and receive
-            sock->file_size = get_file_size(filepath1);
-            file_size = sock->file_size;
+            sock->file_size = get_file_size(sock->first_filepath);
 
-            msg = deliver(t_id, sock_fd, filepath1, file_size);
+            msg = deliver(t_id, sock);
 
             printf("%s\n", msg);
 
@@ -77,32 +58,25 @@ void server_cmd_handler(socket_md_t* sock) {
                 free(msg);
             }
 
-            if (filepath1 != NULL) {
-                free(filepath1);
-            }
-            if (filepath2 != NULL) {
-                free(filepath2);
-            }
-
             return;
           } else if (cmd == RM) {
-            printf("Thread ID: %lu\n", t_id);
-            if (filepath1 != NULL) {
-              const char* rm_item = filepath1;
+                printf("Thread ID: %lu\n", t_id);
+                
+            if (sock->first_filepath != NULL) {
               // need to lock here since this is modifying a folder or file
               pthread_mutex_lock(&rm_file_mutex);
               int rm_status = rm_file_or_folder(sock);
               pthread_mutex_unlock(&rm_file_mutex);
               if(rm_status != 1) {
-                  const char* const_msg = "Server\n RM: Failed to remove";
-                  msg = build_send_msg(t_id, const_msg, rm_item);
+                  const char* const_msg = "Server\n     RM: Failed to remove";
+                  msg = build_send_msg(t_id, const_msg, sock->first_filepath);
               } else {
-                  const char* const_msg = "Server\n RM: Successfully removed";
-                  msg = build_send_msg(t_id, const_msg, rm_item);
+                  const char* const_msg = "Server\n     RM: Successfully removed";
+                  msg = build_send_msg(t_id, const_msg, sock->first_filepath);
               }
             } else {
-                const char* const_msg = "Server\n RM: First filepath is NULL";
-                msg = build_send_msg(t_id, const_msg, "");
+                const char* const_msg = "Server\n   RM: First filepath is NULL";
+                msg = build_send_msg(t_id, const_msg, sock->first_filepath);
             }
             
             printf("%s\n", msg);
@@ -113,13 +87,6 @@ void server_cmd_handler(socket_md_t* sock) {
                 }
 
                 free(msg); // Free the allocated memory
-            }
-
-            if (filepath1 != NULL) {
-                free(filepath1);
-            }
-            if (filepath2 != NULL) {
-                free(filepath2);
             }
             return;
         } else if (cmd == STOP) {
@@ -136,12 +103,6 @@ void server_cmd_handler(socket_md_t* sock) {
             if (msg != NULL) {
                 free(msg);
             }
-            if (filepath1 != NULL) {
-                free(filepath1);
-            }
-            if (filepath2 != NULL) {
-                free(filepath2);
-            }
             
             free_socket(sock);
 
@@ -154,14 +115,6 @@ void server_cmd_handler(socket_md_t* sock) {
           }
 
         printf("Thread ID %lu ending..\n", (unsigned long)thread_id);
-
-        // Clean and Closing the socket:
-        if (filepath1 != NULL) {
-            free(filepath1);
-        }
-        if (filepath2 != NULL) {
-            free(filepath2);
-        }
 
 }
 

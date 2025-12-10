@@ -27,41 +27,21 @@ void client_cmd_handler(socket_md_t* sock) {
     // handle different commands
     char* msg = NULL;
     commands cmd = sock->command;
-    int sock_fd = sock->client_sock_fd;
-    char* filepath1 = NULL;
-    if (sock->first_filepath != NULL) {
-        filepath1 = strdup(sock->first_filepath);
-    }
-    char* filepath2 = NULL;
-    if (sock->sec_filepath != NULL) {
-        filepath2 = strdup(sock->sec_filepath);
-    }
-    uint32_t file_size = 0;
     // COMMANDS
     if (cmd == WRITE) {
-        sock->file_size = get_file_size(filepath1);
-        file_size = sock->file_size;
-        msg = deliver(0, sock_fd, filepath1, file_size);
+        sock->file_size = get_file_size(sock->first_filepath);
+        msg = deliver(0, sock);
 
         printf("%s\n", msg);
 
         if (msg != NULL) {
             free(msg);
-        }
-        
-        if (filepath1 != NULL) {
-            free(filepath1);
-        }
-        
-        if (filepath2 != NULL) {
-            free(filepath2);
         }
         return;
     } else if (cmd == GET) {
         rcv_request(sock); // a. receive file size
-        file_size = sock->file_size;
 
-        msg = receive(0, sock_fd, filepath2, file_size);
+        msg = receive(0, sock);
         
         printf("%s\n", msg);
 
@@ -69,84 +49,35 @@ void client_cmd_handler(socket_md_t* sock) {
             free(msg);
         }
         
-        if (filepath1 != NULL) {
-            free(filepath1);
-        }
-        
-        if (filepath2 != NULL) {
-            free(filepath2);
-        }
         return;
     } else if (cmd == RM) {
         // Wait for acknowledgment from the other socket before declaring success
-        ssize_t rm_recv = recv(sock_fd, server_message, sizeof(server_message), 0); // receive server's response to handling RM
+        ssize_t rm_recv = recv(sock->client_sock_fd, server_message, sizeof(server_message), 0); // receive server's response to handling RM
         if (rm_recv < 0) {
             perror("Client: Error receiving acknowledgment from server");
-            if (filepath1 != NULL) {
-                free(filepath1);
-            }
-            
-            if (filepath2 != NULL) {
-                free(filepath2);
-            }
             return;
         } else if (rm_recv == 0) {
             printf("Client: Server closed connection\n");
-            if (filepath1 != NULL) {
-                free(filepath1);
-            }
-            
-            if (filepath2 != NULL) {
-                free(filepath2);
-            }
             return;
         }
 
         __print_server_resp(server_message);
-        
-        if (filepath1 != NULL) {
-            free(filepath1);
-        }
-        
-        if (filepath2 != NULL) {
-            free(filepath2);
-        }
 
         return;
     } else if (cmd == STOP) {
         
         // Receive the server's response:
-        if(recv(sock_fd, server_message, sizeof(server_message), 0) < 0) {
+        if(recv(sock->client_sock_fd, server_message, sizeof(server_message), 0) < 0) {
             printf("Client: Error while receiving server's msg\n");
-            if (filepath1 != NULL) {
-                free(filepath1);
-            }
             
-            if (filepath2 != NULL) {
-                free(filepath2);
-            }
             return;
         }
         
         printf("Client:\n Server's response:\n%s\n",server_message);
-        if (filepath1 != NULL) {
-            free(filepath1);
-        }
         
-        if (filepath2 != NULL) {
-            free(filepath2);
-        }
         return;
     } else {
         printf("Client: Unknown command\n");
-    }
-
-    if (filepath1 != NULL) {
-        free(filepath1);
-    }
-    
-    if (filepath2 != NULL) {
-        free(filepath2);
     }
 }
 

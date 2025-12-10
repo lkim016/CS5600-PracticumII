@@ -23,9 +23,9 @@
 #ifndef HANDLERS_H
 #define HANDLERS_H
 
-char* deliver(unsigned long t_id, int sock_fd, char* filepath1, uint32_t file_size);
+char* deliver(unsigned long t_id, socket_md_t* sock);
 
-char* receive(unsigned long t_id, int sock_fd, char* filepath2, uint32_t file_size);
+char* receive(unsigned long t_id, socket_md_t* sock);
 
 /**
  * @brief constructs a message that is concatenated in dynamic memory allocation to be sent over TCP

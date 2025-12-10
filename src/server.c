@@ -86,7 +86,7 @@ int main(void) {
           ntohs(client_addr.sin_port));
     
     // create a new socket metadata for every client connection
-    socket_md_t* server_metadata = create_socket_md(client_sock);
+    socket_md_t* server_metadata = create_socket_md(client_sock, SERVER);
     if (!server_metadata) {
       printf("Failed to create socket metadata\n");
       continue;
