@@ -37,6 +37,7 @@ char* deliver(unsigned long t_id, int sock_fd, char* filepath1, uint32_t file_si
         }
     } else {
         msg = build_send_msg(t_id, "File does not exist.", "");
+        return msg;
     }
 
     msg = build_send_msg(t_id, "Message is empty", "");
@@ -55,17 +56,21 @@ char* receive(unsigned long t_id, int sock_fd, char* filepath2, uint32_t file_si
 
         printf("Receiving file (%u bytes) to: %s\n", file_size, filepath2);
         ssize_t file_rcvd_bytes = rcv_file(sock_fd, filepath2, file_size);
-        printf("Received file %s (%u bytes)", filepath2, file_size);
+        printf("Received file %s (%u bytes)\n", filepath2, file_size);
         if (file_rcvd_bytes < 0 ) {
             msg = build_send_msg(t_id, "Error receiving file", "");
+            return msg;
         } else {
             msg = build_send_msg(t_id, "File was successfully received!", "");
+            return msg;
         }
     } else {
         if(file_size == 0) {
             msg = build_send_msg(t_id, "Error size of file being sent is 0", "");
+            return msg;
         } else {
             msg = build_send_msg(t_id, "Error file size is 0 or folder was not able to be made", "");
+            return msg;
         }
     }
     
@@ -94,7 +99,7 @@ char* build_send_msg(unsigned long id, const char* part1, const char* part2) { /
         perror("Memory allocation failed\n");
         return NULL;
     }
-    
+
     sprintf(msg_ptr, "Thread ID# %lu: %s %s\n", id, part1, part2);
     return msg_ptr;
 }
