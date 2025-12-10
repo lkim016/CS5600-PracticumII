@@ -151,12 +151,12 @@ ssize_t send_file(const char* first_filepath, int sock_fd) {
     }
 
     // Lock the socket mutex to ensure thread-safety when working with the file and socket
-    // pthread_mutex_lock(&send_mutex);
+    pthread_mutex_lock(&send_mutex);
     // printf("Local File path: %s\n", file_path);
     FILE *file = fopen(first_filepath, "rb"); // "rb" for read binary
     if (file == NULL) {
         fprintf(stderr, "ERROR: file send - Issue opening read file, could not send\n");
-        // pthread_mutex_unlock(&send_mutex);
+        pthread_mutex_unlock(&send_mutex);
         return -1;
     }
 
@@ -171,7 +171,7 @@ ssize_t send_file(const char* first_filepath, int sock_fd) {
 
             if (bytes_sent <= 0) {
                 fprintf(stderr, "ERROR: file send - Unable to send file, could not send\n");
-                // pthread_mutex_unlock(&send_mutex);
+                pthread_mutex_unlock(&send_mutex);
                 // handle error (disconnect, etc.)
                 break;
             }
@@ -182,6 +182,6 @@ ssize_t send_file(const char* first_filepath, int sock_fd) {
     printf("Bytes Sent: %lu\n", total);
 
     fclose(file);
-    // pthread_mutex_unlock(&send_mutex);
+    pthread_mutex_unlock(&send_mutex);
     return total;
 }

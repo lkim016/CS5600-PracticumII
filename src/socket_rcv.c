@@ -79,18 +79,18 @@ void rcv_request(socket_md_t* sock) {
         set_first_fileInfo(fpath1, sock);
         set_first_filepath(sock); 
     }
-    printf("DEBUG!\n");
     
     if (fpath2 != NULL) {
         set_sec_fileInfo(fpath2, sock);
     } else if (sock->command != RM || sock->command != STOP) {
         set_sec_fileInfo(fpath1, sock);
     }
+    
     if (sock->command != RM || sock->command != STOP) {
         set_sec_filepath(sock);
     }
 
-
+    printf("DEBUG!\n");
     printf("Command: %u\n", sock->command);
     printf("Filename1: %s\n", sock->first_filepath);
     printf("Filename2: %s\n", sock->sec_filepath);

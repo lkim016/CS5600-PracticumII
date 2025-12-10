@@ -21,7 +21,6 @@ void* server_thread_func(void* arg) {
 
   server_cmd_handler(md);
 
-  
   free_socket(md);
   return NULL;
 }
