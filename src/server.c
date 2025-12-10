@@ -16,9 +16,9 @@ pthread_mutex_t stop_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* server_thread_func(void* arg) {
   socket_md_t* md = (socket_md_t*)arg;
-  printf("DEBUG!\n");
+  
   rcv_request(md);
-
+  printf("DEBUG!\n");
   server_cmd_handler(md);
 
   
