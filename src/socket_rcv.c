@@ -49,10 +49,15 @@ void rcv_request(socket_md_t* sock) {
         return;
     }
 
-    sock->command = ntohl(h.command);
-    uint32_t fpath1_len = ntohl(h.fpath1_len);
-    uint32_t fpath2_len = ntohl(h.fpath2_len);
-    sock->file_size = ntohl(h.file_size);
+    uint32_t temp;
+    memcpy(&temp, &h.command, sizeof(uint32_t));
+    sock->command = ntohl(temp);
+    memcpy(&temp, &h.fpath1_len, sizeof(uint32_t));
+    uint32_t fpath1_len = ntohl(temp);
+    memcpy(&temp, &h.fpath2_len, sizeof(uint32_t));
+    uint32_t fpath2_len = ntohl(temp);
+    memcpy(&temp, &h.file_size, sizeof(uint32_t));
+    sock->file_size = ntohl(temp);
 
     if (sock->command == STOP) {
         return;

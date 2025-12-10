@@ -49,7 +49,7 @@ void server_cmd_handler(socket_md_t* sock) {
                 file_size = sock->file_size;
                 
                 printf("Expected File Size: %u\n", file_size);
-                msg = deliver(t_id, sock_fd, filepath2, file_size);
+                msg = receive(t_id, sock_fd, filepath2, file_size);
 
                 printf("%s\n", msg);
 
@@ -70,7 +70,7 @@ void server_cmd_handler(socket_md_t* sock) {
             sock->file_size = get_file_size(filepath1);
             file_size = sock->file_size;
 
-            msg = receive(t_id, sock_fd, filepath1, file_size);
+            msg = deliver(t_id, sock_fd, filepath1, file_size);
 
             printf("%s\n", msg);
 
@@ -134,8 +134,6 @@ void server_cmd_handler(socket_md_t* sock) {
             // Add delay to ensure client receives
             // usleep(60000);  // 10ms delay
 
-            signal(SIGINT, handle_sigint);
-            
             if (msg != NULL) {
                 free(msg);
             }
@@ -145,7 +143,11 @@ void server_cmd_handler(socket_md_t* sock) {
             if (filepath2 != NULL) {
                 free(filepath2);
             }
-            free_socket(sock);
+            
+            // free_socket(sock);
+
+            signal(SIGINT, handle_sigint);
+            
             return; // FIXME: change when multi-threading
           } else {
               printf("Server: Unknown command\n");

@@ -27,6 +27,8 @@ extern pthread_mutex_t stop_mutex;
 extern bool stop_server;
 
 
+void handle_sigint(int sig);
+
 /**
  * @brief handles the CLI args commands for the server
  *
