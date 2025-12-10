@@ -12,33 +12,6 @@
 pthread_mutex_t send_mutex = PTHREAD_MUTEX_INITIALIZER; // FIXME: maybe change name
 
 
-
-/*
-dyn_msg
-NOTE: need to free() result
-*/
-char* build_send_msg(unsigned long id, const char* part1, const char* part2) { // FIXME: change to build_send_msg
-    if (id < 0) {
-        return NULL;
-    }
-    if (part1 == NULL) {
-        return NULL;
-    }
-    if (part2 == NULL) {
-        return NULL;
-    }
-
-    size_t len = strlen(part1) + strlen(part2) + MSG_SIZE; // 1 for space, 1 for newline, 1 for null terminator
-    char* msg_ptr = calloc(len, sizeof(char));
-    if (msg_ptr == NULL) {
-        perror("Memory allocation failed\n");
-        return NULL;
-    }
-    sprintf(msg_ptr, "Thread ID#%lu:\n  %s %s\n", id, part1, part2);
-    return msg_ptr;
-}
-
-
 /*
 send_msg
 */

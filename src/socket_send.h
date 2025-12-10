@@ -24,15 +24,6 @@
 
 
 /**
- * @brief constructs a message that is concatenated in dynamic memory allocation to be sent over TCP
- *
- * @param part1 const char* - a constant char string that will make up the first part of the new string
- * @param part2 const char* - a constant char string that will make up the second part of the new string
- */
-char* build_send_msg(unsigned long id, const char* part1, const char* part2);
-
-
-/**
  * @brief depending on the command, a TCP socket is sending a message to the other TCP socket either client or message.
  *
  * @param sock_fd int - the socket file descriptor that the file data will be sent to

@@ -25,7 +25,7 @@ void client_cmd_handler(socket_md_t* sock) {
     memset(server_message,'\0',sizeof(server_message));
     
     // handle different commands
-    // char* msg = NULL;
+    char* msg = NULL;
     commands cmd = sock->command;
     int sock_fd = sock->client_sock_fd;
     char* filepath1 = NULL;
@@ -41,7 +41,13 @@ void client_cmd_handler(socket_md_t* sock) {
     if (cmd == WRITE) {
         sock->file_size = get_file_size(filepath1);
         file_size = sock->file_size;
-        push(sock_fd, filepath1, file_size);
+        msg = deliver(0, sock_fd, filepath1, file_size);
+
+        printf("%s\n", msg);
+
+        if (msg != NULL) {
+            free(msg);
+        }
         
         if (filepath1 != NULL) {
             free(filepath1);
@@ -55,7 +61,13 @@ void client_cmd_handler(socket_md_t* sock) {
         rcv_request(sock); // a. receive file size
         file_size = sock->file_size;
 
-        pull(sock_fd, filepath2, file_size);
+        msg = receive(0, sock_fd, filepath2, file_size);
+        
+        printf("%s\n", msg);
+
+        if (msg != NULL) {
+            free(msg);
+        }
         
         if (filepath1 != NULL) {
             free(filepath1);

@@ -9,22 +9,20 @@
 
 pthread_mutex_t rm_file_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+volatile sig_atomic_t shutting_down = 0;
 
 /*
 server_cmd_handler
 */
-/*
-void* server_cmd_handler(void* arg) {
-  socket_md_t* sock = (socket_md_t*)arg;
-  if (!sock) {
-      fprintf(stderr, "ERROR: Socket is NULL\n");
-      return NULL;
-  }
-*/
+void handle_sigint(int sig) {
+    shutting_down = 1;
+}
+
+
 void server_cmd_handler(socket_md_t* sock) {
         pthread_t thread_id = pthread_self();
         printf("Thread ID %lu starting..\n", (unsigned long)thread_id);
-        unsigned long threadID = (unsigned long)thread_id;
+        unsigned long t_id = (unsigned long)thread_id;
 
         print_sock_metada(sock); // FIXME: maybe delete
 
@@ -46,13 +44,18 @@ void server_cmd_handler(socket_md_t* sock) {
         uint32_t file_size = 0;
         // COMMANDS
         if (cmd == WRITE) {
-                printf("Thread ID: %lu\n", threadID);
+                printf("Thread ID: %lu\n", t_id);
                 rcv_request(sock); // receive for file size
                 file_size = sock->file_size;
                 
                 printf("Expected File Size: %u\n", file_size);
-                pull(sock_fd, filepath2, file_size);
+                msg = deliver(t_id, sock_fd, filepath2, file_size);
 
+                printf("%s\n", msg);
+
+                if (msg != NULL) {
+                    free(msg);
+                }
                 if (filepath1 != NULL) {
                     free(filepath1);
                 }
@@ -62,12 +65,18 @@ void server_cmd_handler(socket_md_t* sock) {
 
                 return;
         } else if (cmd == GET) {
-            printf("Thread ID: %lu\n", threadID);
+            printf("Thread ID: %lu\n", t_id);
             // check if file_exits - if yes then send and receive
             sock->file_size = get_file_size(filepath1);
             file_size = sock->file_size;
 
-            push(sock_fd, filepath1, file_size);
+            msg = receive(t_id, sock_fd, filepath1, file_size);
+
+            printf("%s\n", msg);
+
+            if (msg != NULL) {
+                free(msg);
+            }
 
             if (filepath1 != NULL) {
                 free(filepath1);
@@ -78,7 +87,7 @@ void server_cmd_handler(socket_md_t* sock) {
 
             return;
           } else if (cmd == RM) {
-            printf("Thread ID: %lu\n", threadID);
+            printf("Thread ID: %lu\n", t_id);
             if (filepath1 != NULL) {
               const char* rm_item = filepath1;
               // need to lock here since this is modifying a folder or file
@@ -87,14 +96,14 @@ void server_cmd_handler(socket_md_t* sock) {
               pthread_mutex_unlock(&rm_file_mutex);
               if(rm_status != 1) {
                   const char* const_msg = "Server\n RM: Failed to remove";
-                  msg = build_send_msg(threadID, const_msg, rm_item);
+                  msg = build_send_msg(t_id, const_msg, rm_item);
               } else {
                   const char* const_msg = "Server\n RM: Successfully removed";
-                  msg = build_send_msg(threadID, const_msg, rm_item);
+                  msg = build_send_msg(t_id, const_msg, rm_item);
               }
             } else {
                 const char* const_msg = "Server\n RM: First filepath is NULL";
-                msg = build_send_msg(threadID, const_msg, "");
+                msg = build_send_msg(t_id, const_msg, "");
             }
             
             printf("%s\n", msg);
@@ -115,7 +124,7 @@ void server_cmd_handler(socket_md_t* sock) {
             }
             return;
         } else if (cmd == STOP) {
-            msg = build_send_msg(threadID, "Exiting Server...", "");
+            msg = build_send_msg(t_id, "Exiting Server...", "");
             printf("%s\n", msg);
             ssize_t msg_send_bytes = send_msg(sock->client_sock_fd, msg);
             if (msg_send_bytes > 0) {
@@ -125,11 +134,7 @@ void server_cmd_handler(socket_md_t* sock) {
             // Add delay to ensure client receives
             // usleep(60000);  // 10ms delay
 
-            /*
-            pthread_mutex_lock(&stop_mutex);
-            stop_server = true;  // Set the global stop flag
-            pthread_mutex_unlock(&stop_mutex);
-            */
+            signal(SIGINT, handle_sigint);
             
             if (msg != NULL) {
                 free(msg);
@@ -141,7 +146,7 @@ void server_cmd_handler(socket_md_t* sock) {
                 free(filepath2);
             }
             free_socket(sock);
-            exit(1); // FIXME: change when multi-threading
+            return; // FIXME: change when multi-threading
           } else {
               printf("Server: Unknown command\n");
           }
