@@ -63,7 +63,6 @@ void rcv_request(socket_md_t* sock) {
     memcpy(&temp, &h.file_size, sizeof(uint32_t));
     sock->file_size = ntohl(temp);
 
-    printf("DEBUG!\n");
 
     /* Read filenames */
     char* fpath1 = malloc(fpath1_len + 1);
@@ -76,6 +75,7 @@ void rcv_request(socket_md_t* sock) {
     fpath2[fpath2_len] = '\0';
 
 
+    printf("DEBUG!\n");
     if(sock->command != STOP) {
         set_first_fileInfo(fpath1, sock);
         set_first_filepath(sock); 
