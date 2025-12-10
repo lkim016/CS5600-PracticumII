@@ -12,7 +12,6 @@
 
 // need to declare this here otherwise experienced error
 pthread_mutex_t stop_mutex = PTHREAD_MUTEX_INITIALIZER;
-bool stop_server = false;
 
 
 void* server_thread_func(void* arg) {
@@ -67,14 +66,7 @@ int main(void) {
     return -1;
   }
   
-  while(1) { // loop through to have server continue listening until shut down
-    pthread_mutex_lock(&stop_mutex);
-    bool should_stop = stop_server;
-    pthread_mutex_unlock(&stop_mutex);
-
-    if (should_stop) {
-        break;  // Exit the thread if server is stopping
-    }
+  while(shutting_down != 1) { // loop through to have server continue listening until shut down
     
     printf("\nListening for incoming connections on port %d\n", PORT);
     

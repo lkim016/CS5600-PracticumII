@@ -10,4 +10,5 @@ run_fixed.sh
 run.sh
 rfs
 data/
+dataCopy/
 original/

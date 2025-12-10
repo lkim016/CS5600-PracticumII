@@ -24,7 +24,7 @@
 
 
 extern pthread_mutex_t stop_mutex;
-extern bool stop_server;
+extern volatile sig_atomic_t shutting_down;
 
 
 void handle_sigint(int sig);

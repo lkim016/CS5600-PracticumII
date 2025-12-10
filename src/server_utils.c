@@ -8,7 +8,6 @@
 #include "server_utils.h"
 
 pthread_mutex_t rm_file_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 volatile sig_atomic_t shutting_down = 0;
 
 /*
@@ -147,7 +146,7 @@ void server_cmd_handler(socket_md_t* sock) {
             // free_socket(sock);
 
             signal(SIGINT, handle_sigint);
-            
+
             return; // FIXME: change when multi-threading
           } else {
               printf("Server: Unknown command\n");

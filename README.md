@@ -8,6 +8,7 @@
 5. Run commands below inside the directory of the Makefile per first terminal and second terminal for Client/Server to execute based on the desired make commands:
   - `make server` - will compile the server program which will set it up to be ready to listen for connections and handle the client connection and its requests per the allowed commands.
   - `make client` - will compile the server program to be a `./rfs` program which will set it up to be ready to send requests per the allowed commands to the server for the server to handle.
+  - To exit the program, press [CTRL+C].
 
 ### References
 [^1]  
