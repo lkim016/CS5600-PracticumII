@@ -29,7 +29,6 @@ void client_cmd_handler(socket_md_t* sock) {
     commands cmd = sock->command;
     // COMMANDS
     if (cmd == WRITE) {
-        sock->file_size = get_file_size(sock->first_filepath);
         msg = deliver(0, sock);
 
         printf("%s\n", msg);
@@ -39,8 +38,7 @@ void client_cmd_handler(socket_md_t* sock) {
         }
         return;
     } else if (cmd == GET) {
-        rcv_request(sock); // a. receive file size
-
+        
         msg = receive(0, sock);
         
         printf("%s\n", msg);
