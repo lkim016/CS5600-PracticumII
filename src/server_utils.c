@@ -143,9 +143,10 @@ void server_cmd_handler(socket_md_t* sock) {
                 free(filepath2);
             }
             
-            // free_socket(sock);
+            free_socket(sock);
 
             signal(SIGINT, handle_sigint);
+            exit(0);
 
             return; // FIXME: change when multi-threading
           } else {

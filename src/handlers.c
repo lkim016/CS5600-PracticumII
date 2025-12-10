@@ -32,7 +32,7 @@ char* deliver(unsigned long t_id, int sock_fd, char* filepath1, uint32_t file_si
                 return msg;
             }
         } else {
-            msg = build_send_msg(t_id, "", "File did sent...");
+            msg = build_send_msg(t_id, "", "File did not send...");
             return msg;
         }
     } else {
