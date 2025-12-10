@@ -73,7 +73,7 @@ void client_cmd_handler(socket_md_t* sock) {
             return;
         }
         
-        printf("Client:\n Server's response:\n%s\n",server_message);
+        printf("Client:\n   %s\n",server_message);
         
         return;
     } else {
@@ -124,5 +124,5 @@ void set_client_sock_metadata(socket_md_t* sock, int argc, char* argv[]) {
 __print_server_resp
 */
 void __print_server_resp(const char* response) {
-  printf("Client:\n Server Response: %s\n", response);
+  printf("Client:\n     %s\n", response);
 }
