@@ -26,6 +26,8 @@ char* deliver(unsigned long t_id, socket_md_t* sock) {
     if (sock->sec_filepath != NULL) {
         filepath2 = strdup(sock->sec_filepath);
     }
+    // get file size and then set to be sent
+    sock->file_size = get_file_size(sock->first_filepath);
     uint32_t file_size = sock->file_size;
     const char* sock_type_str = type_enum_to_str(sock->type);
     char* msg = NULL;
@@ -84,7 +86,8 @@ char* receive(unsigned long t_id, socket_md_t* sock) {
     int folder_exists = folder_not_exists_make(filepath2);
     if (folder_exists == 0 && file_size > 0) {
         printf("Path existed or was newly created\n");
-        rcv_request(sock); // receive file size
+         // receive file size after transferring sock metadata to local variables
+        rcv_request(sock);
         file_size = sock->file_size;
         printf("Receiving file (%u bytes) to: %s\n", file_size, filepath2);
         ssize_t file_rcvd_bytes = rcv_file(sock_fd, filepath2, file_size);
