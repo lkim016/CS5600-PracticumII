@@ -46,8 +46,6 @@ void server_cmd_handler(socket_md_t* sock) {
                 return;
         } else if (cmd == GET) {
             printf("Thread ID: %lu\n", t_id);
-            // check if file_exits - if yes then send and receive
-            sock->file_size = get_file_size(sock->first_filepath);
 
             msg = deliver(t_id, sock);
 
