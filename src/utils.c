@@ -119,7 +119,7 @@ int folder_not_exists_make(const char* file_path) {
     free(dirs);
     free(path);
     
-    printf("Dir check complete\n");
+    printf("Directory check complete\n");
     
     return 0;
 }

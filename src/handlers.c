@@ -28,9 +28,12 @@ char* deliver(unsigned long t_id, int sock_fd, char* filepath1, uint32_t file_si
                 msg = build_send_msg(t_id, "", "File send failed");
                 return msg;
             } else {
-                msg = build_send_msg(t_id, "", "File sent...");
+                msg = build_send_msg(t_id, "", "File was sent!");
                 return msg;
             }
+        } else {
+            msg = build_send_msg(t_id, "", "File did sent...");
+            return msg;
         }
     } else {
         msg = build_send_msg(t_id, "", "File does not exist.");
@@ -90,6 +93,6 @@ char* build_send_msg(unsigned long id, const char* part1, const char* part2) { /
         perror("Memory allocation failed\n");
         return NULL;
     }
-    sprintf(msg_ptr, "Thread ID#%lu:\n  %s %s\n", id, part1, part2);
+    sprintf(msg_ptr, "Thread ID# %lu:\n  %s %s\n", id, part1, part2);
     return msg_ptr;
 }
