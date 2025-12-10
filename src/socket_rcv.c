@@ -95,10 +95,10 @@ void rcv_request(socket_md_t* sock) {
     printf("Filename1: %s\n", sock->first_filepath);
     printf("Filename2: %s\n", sock->sec_filepath);
 
-    if (fpath1) {
+    if (fpath1 != NULL) {
         free(fpath1);
     }
-    if (fpath2) {
+    if (fpath2 != NULL) {
         free(fpath2);
     }
     
